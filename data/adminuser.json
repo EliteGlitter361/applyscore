@@ -14,5 +14,13 @@
     "role": "admin",
     "auditPermission": 1,
     "canBan": false
+  },
+  {
+    "id": 3,
+    "username": "xjx",
+    "password": "35fe3c97",
+    "role": "admin",
+    "auditPermission": 1,
+    "canBan": false
   }
 ]
