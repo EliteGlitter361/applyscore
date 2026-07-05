@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>提交学分申请</title>
+  <!-- 入口检查脚本（在页面渲染前执行，若关闭则立即跳转） -->
+  <script>
+    (function() {
+      // 为防止页面闪现，先隐藏 body
+      document.documentElement.style.display = 'none';
+      fetch('/api/settings')
+        .then(res => res.json())
+        .then(settings => {
+          if (!settings.enabled) {
+            const msg = settings.message || '系统维护中，请稍后再试。';
+            window.location.replace(`/close.html?msg=${encodeURIComponent(msg)}`);
+            return;
+          }
+          // 通道开启，显示页面
+          document.documentElement.style.display = '';
+        })
+        .catch(() => {
+          // 网络错误，默认允许访问
+          document.documentElement.style.display = '';
+        });
+    })();
+  </script>
+  <!-- 样式部分（原完整样式） -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/zh.js"></script>
+  <style>
+    /* ===== 原完整样式（与之前布局正常版本完全一致） ===== */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', 'PingFang SC', sans-serif; background: #f0f4ff; min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .container { max-width:800px; width:100%; background:rgba(255,255,255,0.85); backdrop-filter:blur(12px); border-radius:42px; padding:40px 36px 48px; box-shadow:0 20px 60px rgba(0,20,50,0.15); border:1px solid rgba(255,255,255,0.4); }
+    .app-header { text-align:center; margin-bottom:20px; }
+    .app-header h1 { font-size:30px; font-weight:700; color:#0b1e3a; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+    .app-header h1 span { background:linear-gradient(135deg,#2a6df4,#1a4db5); color:#fff; font-size:14px; padding:4px 16px; border-radius:40px; }
+    .back-row { display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+    .btn-back { background:none; border:none; font-size:18px; font-weight:500; color:#2a6df4; cursor:pointer; padding:6px 12px 6px 4px; border-radius:40px; display:flex; align-items:center; gap:6px; transition:background 0.2s; text-decoration:none; }
+    .btn-back:hover { background:rgba(42,109,244,0.08); }
+    .back-row h2 { font-size:22px; font-weight:600; color:#0b1e3a; }
+    .form-group { margin-bottom:20px; }
+    .form-group label { display:block; font-weight:500; color:#1f2a44; margin-bottom:6px; font-size:15px; }
+    .form-group label .required { color:#e53e3e; margin-left:2px; }
+    .form-control, .flatpickr-input { width:100%; padding:14px 18px; border:2px solid #e2e8f0; border-radius:18px; font-size:15px; background:#ffffffcc; transition:border-color 0.25s, box-shadow 0.25s; font-family:inherit; color:#1a202c; }
+    textarea.form-control { resize:vertical; min-height:60px; }
+    .form-control:focus, .flatpickr-input:focus { outline:none; border-color:#2a6df4; box-shadow:0 0 0 4px rgba(42,109,244,0.15); background:#fff; }
+    .flatpickr-wrapper { position:relative; }
+    .flatpickr-wrapper .flatpickr-input { padding-right:44px; }
+    .date-icon { position:absolute; right:18px; top:50%; transform:translateY(-50%); font-size:20px; pointer-events:none; opacity:0.6; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .upload-wrapper { display:flex; flex-direction:column; gap:14px; background:#f7fafc; padding:18px 20px; border-radius:18px; border:2px dashed #cbd5e0; }
+    .upload-control { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+    .upload-control input[type="file"] { flex:1; font-size:14px; color:#4a5568; }
+    .upload-control input[type="file"]::file-selector-button { padding:8px 20px; border:none; border-radius:30px; background:#2a6df4; color:#fff; font-weight:600; margin-right:14px; cursor:pointer; }
+    .upload-control input[type="file"]::file-selector-button:hover { background:#1a4db5; }
+    .upload-badge { background:#2d3748; color:#fff; padding:4px 16px; border-radius:40px; font-size:14px; font-weight:500; white-space:nowrap; }
+    .upload-hint { font-size:13px; color:#718096; }
+    .preview-container { display:flex; flex-wrap:wrap; gap:14px; margin-top:12px; }
+    .preview-item { position:relative; width:100px; height:100px; border-radius:16px; overflow:hidden; border:2px solid #e2e8f0; background:#fff; cursor:pointer; }
+    .preview-item img { width:100%; height:100%; object-fit:cover; }
+    .preview-item .remove-btn { position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.6); color:#fff; border:none; border-radius:50%; width:24px; height:24px; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+    .preview-item .remove-btn:hover { background:#e53e3e; }
+    .btn-submit { width:100%; padding:16px; background:linear-gradient(135deg,#2a6df4,#1a4db5); color:#fff; border:none; border-radius:28px; font-size:20px; font-weight:600; cursor:pointer; transition:all 0.25s ease; box-shadow:0 8px 24px rgba(42,109,244,0.3); margin-top:8px; }
+    .btn-submit:hover { transform:translateY(-2px); box-shadow:0 12px 32px rgba(42,109,244,0.4); }
+    .btn-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    .toast { position:fixed; top:30px; left:50%; transform:translateX(-50%) translateY(-80px); background:#1a202c; color:#fff; padding:14px 32px; border-radius:60px; font-weight:500; font-size:16px; z-index:9999; transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s; opacity:0; pointer-events:none; max-width:90%; text-align:center; }
+    .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+    .toast.success { background:#22543d; }
+    .toast.error { background:#7a2e2e; }
+    .toast.warning { background:#7a5a2e; }
+    .progress-container { margin-top:20px; display:none; }
+    .progress-bar { width:100%; height:8px; background-color:#e2e8f0; border-radius:4px; overflow:hidden; }
+    .progress-fill { width:0%; height:100%; background-color:#2a6df4; transition:width 0.3s; }
+    .progress-text { font-size:14px; color:#718096; margin-top:5px; text-align:center; }
+    #statusMessage { text-align:center; margin-top:10px; font-weight:600; color:#2a6df4; display:none; font-size:16px; }
+
+    .image-modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:9999; cursor:pointer; padding:20px; }
+    .image-modal img { max-width:90%; max-height:90%; object-fit:contain; border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,0.6); }
+
+    /* 移动端适配：与之前一致 */
+    @media (max-width: 768px) {
+      body { padding:12px; }
+      .container { padding:24px 18px; border-radius:28px; }
+      .app-header h1 { font-size:24px; }
+      .back-row { gap:8px; }
+      .back-row h2 { font-size:18px; }
+      .form-row { grid-template-columns:1fr; gap:12px; }
+      .form-group { margin-bottom:14px; }
+      .form-control, .flatpickr-input { padding:12px 14px; font-size:14px; border-radius:14px; }
+      .btn-submit { font-size:18px; padding:14px; }
+      .upload-wrapper { padding:14px; }
+      .preview-item { width:80px; height:80px; }
+      .toast { font-size:14px; padding:10px 20px; }
+      #statusMessage { font-size:14px; }
+    }
+    @media (max-width: 480px) {
+      .container { padding:18px 12px; border-radius:20px; }
+      .app-header h1 { font-size:20px; }
+      .app-header h1 span { font-size:12px; padding:2px 10px; }
+      .back-row h2 { font-size:16px; }
+      .btn-back { font-size:16px; }
+      .form-control, .flatpickr-input { padding:10px 12px; font-size:13px; }
+      .btn-submit { font-size:16px; padding:12px; }
+      .upload-control input[type="file"] { font-size:12px; }
+      .preview-item { width:70px; height:70px; }
+      #statusMessage { font-size:13px; }
+    }
+  </style>
+</head>
+<body>
+  <div id="toast" class="toast"></div>
+  <div class="container">
+    <div class="app-header">
+      <h1>📋 申请活动学分 <span>学生端</span></h1>
+    </div>
+    <div class="back-row">
+      <a href="index.html" class="btn-back">
+        <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none"><path d="M15 6l-6 6 6 6"/></svg>返回主页
+      </a>
+      <h2>填写申请信息</h2>
+    </div>
+    <form id="applyForm" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label>申请人姓名 <span class="required">*</span></label>
+          <input class="form-control" id="name" required />
+        </div>
+        <div class="form-group">
+          <label>申请人学号 <span class="required">*</span></label>
+          <input class="form-control" id="studentId" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>活动名称 <span class="required">*</span></label>
+        <input class="form-control" id="activity" required />
+      </div>
+      <div class="form-group">
+        <label>活动参与名单（xxx，xxx，xxx...）</label>
+        <textarea class="form-control" id="participants" rows="3" placeholder="例如：张三，李四，王五"></textarea>
+        <div style="font-size:13px;color:#718096;margin-top:4px;">💡 如果是全班参加则填写“全班”</div>
+      </div>
+      <div class="form-group">
+        <label>活动地点 <span class="required">*</span></label>
+        <input class="form-control" id="location" required />
+      </div>
+      <div class="form-group">
+        <label>活动时间 <span class="required">*</span></label>
+        <div class="flatpickr-wrapper">
+          <input class="form-control" id="time" type="text" readonly required />
+          <span class="date-icon">📅</span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>上传活动证明（至少1张，最多2张）<span class="required">*</span></label>
+        <div class="upload-wrapper">
+          <div class="upload-control">
+            <input type="file" id="imageUpload" accept="image/*" multiple />
+            <span class="upload-badge" id="fileCount">0 / 2</span>
+          </div>
+          <div class="upload-hint">支持 JPG / PNG / WebP，自动压缩至 700px 宽</div>
+          <div class="preview-container" id="preview"></div>
+        </div>
+        <div style="font-size:13px;color:#e53e3e;margin-top:4px;">⚠️ 请至少上传一张证明图片</div>
+      </div>
+      <button type="submit" class="btn-submit">✅ 提交申请</button>
+      <div id="statusMessage">⏳ 正在提交，请不要关闭此页面！</div>
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+        <div class="progress-text" id="progressText">0%</div>
+      </div>
+    </form>
+  </div>
+
+  <script>
+    // ===== Toast（弹窗） =====
+    let toastTimer;
+    function showToast(msg, type='info', dur=2800) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.className = 'toast ' + type;
+      void el.offsetWidth;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), dur);
+    }
+
+    // ===== Flatpickr =====
+    let fp;
+    document.addEventListener('DOMContentLoaded', () => {
+      const now = new Date();
+      const y = now.getFullYear(), m=String(now.getMonth()+1).padStart(2,'0'), d=String(now.getDate()).padStart(2,'0'), h=String(now.getHours()).padStart(2,'0'), min=String(now.getMinutes()).padStart(2,'0');
+      const def = `${y}-${m}-${d} ${h}:${min}`;
+      fp = flatpickr('#time', { enableTime: true, dateFormat: "Y-m-d H:i", time_24hr: true, locale: "zh", defaultDate: def, allowInput: false });
+    });
+
+    // ===== 图片压缩 =====
+    function compressImage(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            let width = img.width;
+            let height = img.height;
+            const MAX = 700;
+            if (width > height) {
+              if (width > MAX) { height *= MAX / width; width = MAX; }
+            } else {
+              if (height > MAX) { width *= MAX / height; height = MAX; }
+            }
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, width, height);
+            canvas.toBlob(blob => {
+              if (!blob) return reject(new Error('压缩失败'));
+              const compressedFile = new File([blob], file.name, { type: 'image/jpeg' });
+              resolve(compressedFile);
+            }, 'image/jpeg', 0.5);
+          };
+          img.onerror = reject;
+          img.src = e.target.result;
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    // ===== 图片预览 + 点击放大 =====
+    const fileInput = document.getElementById('imageUpload');
+    const fileCount = document.getElementById('fileCount');
+    const preview = document.getElementById('preview');
+    let selectedFiles = [];
+
+    function showImageModal(src) {
+      const modal = document.createElement('div');
+      modal.className = 'image-modal';
+      const img = document.createElement('img');
+      img.src = src;
+      modal.appendChild(img);
+      modal.onclick = () => modal.remove();
+      document.body.appendChild(modal);
+    }
+
+    function updatePreview() {
+      preview.innerHTML = '';
+      fileCount.textContent = selectedFiles.length + ' / 2';
+      selectedFiles.forEach((file, idx) => {
+        const reader = new FileReader();
+        reader.onload = e => {
+          const div = document.createElement('div');
+          div.className = 'preview-item';
+          div.innerHTML = `<img src="${e.target.result}" /><button class="remove-btn" data-idx="${idx}">✕</button>`;
+          preview.appendChild(div);
+          div.querySelector('img').onclick = (ev) => { ev.stopPropagation(); showImageModal(e.target.result); };
+          div.querySelector('.remove-btn').addEventListener('click', () => removeFile(idx));
+        };
+        reader.readAsDataURL(file);
+      });
+      fileInput.disabled = selectedFiles.length >= 2;
+      fileInput.style.opacity = selectedFiles.length >= 2 ? '0.6' : '1';
+    }
+
+    function removeFile(idx) {
+      selectedFiles.splice(idx, 1);
+      fileInput.value = '';
+      updatePreview();
+    }
+
+    fileInput.addEventListener('change', function() {
+      const files = Array.from(this.files).filter(f => f.type.startsWith('image/'));
+      if (files.length === 0) return showToast('请选择有效图片', 'error');
+      if (selectedFiles.length + files.length > 2) {
+        showToast(`最多上传2张，已选${selectedFiles.length}张`, 'error');
+        this.value = '';
+        return;
+      }
+      Promise.all(files.map(file => compressImage(file))).then(compressedFiles => {
+        selectedFiles = selectedFiles.concat(compressedFiles);
+        this.value = '';
+        updatePreview();
+      }).catch(() => showToast('图片压缩失败', 'error'));
+    });
+    updatePreview();
+
+    // ===== 表单提交 =====
+    document.getElementById('applyForm').addEventListener('submit', async function(e) {
+      e.preventDefault();
+
+      // 二次检查入口（快速，带超时）
+      try {
+        const controller = new AbortController();
+        const timeout = setTimeout(() => controller.abort(), 2000);
+        const res = await fetch('/api/settings', { signal: controller.signal });
+        clearTimeout(timeout);
+        const settings = await res.json();
+        if (!settings.enabled) {
+          const customMsg = settings.message || '系统维护中，请稍后再试。';
+          window.location.replace(`/close.html?msg=${encodeURIComponent(customMsg)}`);
+          return;
+        }
+      } catch(e) {
+        // 忽略错误
+      }
+
+      // ===== 表单校验 =====
+      const name = document.getElementById('name').value.trim();
+      const studentId = document.getElementById('studentId').value.trim();
+      const activity = document.getElementById('activity').value.trim();
+      const location = document.getElementById('location').value.trim();
+      const time = document.getElementById('time').value;
+      const participants = document.getElementById('participants').value.trim();
+
+      if (!name || !studentId || !activity || !location || !time) {
+        showToast('请完整填写所有必填项！', 'error');
+        return;
+      }
+      if (selectedFiles.length === 0) {
+        showToast('请至少上传一张证明图片！', 'error');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('name', name);
+      formData.append('packageName', studentId);
+      formData.append('versionName', activity);
+      formData.append('publisher', time);
+      if (participants) formData.append('participants', participants);
+      for (let file of selectedFiles) {
+        formData.append('screenshots', file);
+      }
+
+      const submitBtn = this.querySelector('.btn-submit');
+      const progressContainer = document.getElementById('progressContainer');
+      const progressFill = document.getElementById('progressFill');
+      const progressText = document.getElementById('progressText');
+      const statusMsg = document.getElementById('statusMessage');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = '⏳ 提交中...';
+      statusMsg.style.display = 'block';
+      progressContainer.style.display = 'block';
+      progressFill.style.width = '0%';
+      progressText.innerText = '0%';
+
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', '/api/apps', true);
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressFill.style.width = percent + '%';
+          progressText.innerText = percent + '%';
+        }
+      });
+      xhr.onload = function() {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '✅ 提交申请';
+        statusMsg.style.display = 'none';
+        progressContainer.style.display = 'none';
+        if (xhr.status >= 200 && xhr.status < 300) {
+          showToast('✅ 申请提交成功！等待审核', 'success', 2000);
+          setTimeout(() => window.location.href = 'index.html', 1500);
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText);
+            showToast('❌ ' + (err.error || '提交失败'), 'error');
+          } catch { showToast('❌ 提交失败，请重试', 'error'); }
+        }
+      };
+      xhr.onerror = function() {
+        submitBtn.disabled = false;
+        submitBtn.textContent = '✅ 提交申请';
+        statusMsg.style.display = 'none';
+        progressContainer.style.display = 'none';
+        showToast('❌ 网络错误，请检查连接', 'error');
+      };
+      xhr.send(formData);
+    });
+  </script>
+</body>
+</html>

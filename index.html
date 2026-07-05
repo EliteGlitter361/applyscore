@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>学分申请系统</title>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', 'PingFang SC', sans-serif; background: #f0f4ff; min-height:100vh; padding:20px; }
+    .navbar { max-width:1200px; margin:0 auto 28px; background:rgba(255,255,255,0.8); backdrop-filter:blur(12px); border-radius:40px; padding:12px 24px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 4px 20px rgba(0,0,0,0.04); border:1px solid rgba(255,255,255,0.4); }
+    .logo { display:flex; align-items:center; gap:10px; font-size:24px; font-weight:700; color:#0b1e3a; text-decoration:none; }
+    .logo .icon { background:linear-gradient(135deg,#2a6df4,#1a4db5); color:#fff; width:42px; height:42px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-size:20px; }
+    .nav-actions { display:flex; gap:14px; align-items:center; flex-wrap:wrap; }
+    .btn { padding:8px 22px; border-radius:40px; font-weight:600; text-decoration:none; transition:all 0.2s; border:none; cursor:pointer; font-size:15px; white-space:nowrap; }
+    .btn-primary { background:linear-gradient(135deg,#2a6df4,#1a4db5); color:#fff; box-shadow:0 4px 14px rgba(42,109,244,0.25); }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(42,109,244,0.35); }
+    .btn-outline { background:transparent; color:#2a6df4; border:2px solid #2a6df4; }
+    .btn-outline:hover { background:#2a6df4; color:#fff; }
+    .container { max-width:1200px; margin:0 auto; }
+    .page-header { text-align:center; margin-bottom:28px; }
+    .page-header h1 { font-size:32px; font-weight:700; color:#0b1e3a; }
+    .search-bar { display:flex; gap:12px; align-items:center; margin-bottom:32px; flex-wrap:wrap; justify-content:center; }
+    .search-bar input { flex:1; min-width:200px; padding:14px 22px; border:2px solid #e2e8f0; border-radius:40px; font-size:16px; background:#ffffffcc; backdrop-filter:blur(4px); transition:border-color 0.2s; }
+    .search-bar input:focus { outline:none; border-color:#2a6df4; box-shadow:0 0 0 4px rgba(42,109,244,0.1); }
+    .search-bar .refresh-btn { background:#fff; color:#2a6df4; border:2px solid #2a6df4; padding:10px 20px; border-radius:40px; font-weight:600; cursor:pointer; font-size:16px; display:flex; align-items:center; gap:6px; white-space:nowrap; transition:all 0.2s; }
+    .search-bar .refresh-btn:hover { background:#2a6df4; color:#fff; }
+    .app-grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap:24px; }
+    .app-card { background:rgba(255,255,255,0.85); backdrop-filter:blur(8px); border-radius:28px; padding:24px 22px; border:1px solid rgba(255,255,255,0.5); box-shadow:0 8px 24px rgba(0,0,0,0.04); transition:transform 0.2s, box-shadow 0.2s; cursor:pointer; text-decoration:none; color:inherit; display:flex; flex-direction:column; gap:8px; }
+    .app-card:hover { transform:translateY(-4px); box-shadow:0 16px 40px rgba(0,0,0,0.08); }
+    .app-title { font-size:20px; font-weight:700; color:#0b1e3a; line-height:1.3; }
+    .app-student { font-size:15px; color:#4a5568; }
+    .app-meta { display:flex; gap:8px; flex-wrap:wrap; margin-top:4px; }
+    .tag { background:#edf2f7; padding:4px 14px; border-radius:40px; font-size:13px; font-weight:500; color:#2d3748; }
+    .tag.time { background:#e2e8f0; }
+    .empty-state { grid-column:1/-1; text-align:center; padding:60px 20px; color:#718096; font-size:18px; }
+
+    /* 移动端适配 */
+    @media (max-width: 768px) {
+      body { padding:12px; }
+      .navbar { flex-direction:column; align-items:stretch; gap:12px; padding:16px; border-radius:24px; }
+      .logo { font-size:20px; justify-content:center; }
+      .nav-actions { justify-content:center; }
+      .btn { font-size:14px; padding:6px 16px; }
+      .page-header h1 { font-size:24px; }
+      .search-bar { flex-direction:row; flex-wrap:wrap; gap:8px; }
+      .search-bar input { font-size:14px; padding:12px 18px; min-width:150px; flex:1; }
+      .search-bar .refresh-btn { font-size:14px; padding:8px 16px; }
+      .app-grid { grid-template-columns:1fr; gap:16px; }
+      .app-card { padding:18px 16px; border-radius:20px; }
+      .app-title { font-size:18px; }
+      .app-student { font-size:14px; }
+      .tag { font-size:12px; padding:3px 10px; }
+      .container { padding:0 4px; }
+    }
+    @media (max-width: 480px) {
+      .navbar { border-radius:16px; padding:12px; }
+      .logo { font-size:18px; }
+      .logo .icon { width:36px; height:36px; font-size:16px; }
+      .btn { font-size:13px; padding:5px 12px; }
+      .app-card { padding:14px 12px; }
+      .search-bar .refresh-btn { font-size:13px; padding:6px 12px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/" class="logo"><span class="icon">📘</span>学分申请系统</a>
+    <div class="nav-actions">
+      <a href="/upload.html" class="btn btn-primary">＋ 提交申请</a>
+      <a href="/login.html" class="btn btn-outline">🔑 后台管理</a>
+    </div>
+  </nav>
+  <div class="container">
+    <div class="page-header"><h1>📋 活动学分申请列表</h1></div>
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="搜索姓名、学号或活动名称...">
+      <button class="refresh-btn" id="refreshBtn">🔄 刷新</button>
+    </div>
+    <div class="app-grid" id="appGrid"></div>
+  </div>
+
+  <script>
+    function createAppCard(app) {
+      const card = document.createElement('a');
+      card.className = 'app-card';
+      // 使用 app.id 作为参数
+      card.href = `/detail.html?id=${encodeURIComponent(app.id)}`;
+
+      const title = document.createElement('div');
+      title.className = 'app-title';
+      title.textContent = app.versionName || '未命名活动';
+
+      const student = document.createElement('div');
+      student.className = 'app-student';
+      student.textContent = `${app.name || '未知'} · ${app.packageName || ''}`;
+
+      const meta = document.createElement('div');
+      meta.className = 'app-meta';
+      const tag = document.createElement('span');
+      tag.className = 'tag time';
+      tag.textContent = `🕒 ${app.publisher || ''}`;
+      meta.appendChild(tag);
+
+      card.appendChild(title);
+      card.appendChild(student);
+      card.appendChild(meta);
+      return card;
+    }
+
+    async function loadApps(term = '') {
+      const grid = document.getElementById('appGrid');
+      grid.innerHTML = '<div class="empty-state">加载中...</div>';
+      try {
+        const res = await fetch('/api/apps');
+        if (!res.ok) throw new Error('获取列表失败');
+        const allApps = await res.json();
+        let apps = allApps.filter(a => a.status === 'approved');
+        if (term.trim()) {
+          const t = term.trim().toLowerCase();
+          apps = apps.filter(a =>
+            (a.name || '').toLowerCase().includes(t) ||
+            (a.packageName || '').toLowerCase().includes(t) ||
+            (a.versionName || '').toLowerCase().includes(t)
+          );
+        }
+        if (apps.length === 0) {
+          grid.innerHTML = '<div class="empty-state">暂无已批准的申请</div>';
+          return;
+        }
+        const fragment = document.createDocumentFragment();
+        apps.forEach(app => fragment.appendChild(createAppCard(app)));
+        grid.innerHTML = '';
+        grid.appendChild(fragment);
+      } catch (e) {
+        grid.innerHTML = `<div class="empty-state" style="color:red">加载失败：${e.message}</div>`;
+      }
+    }
+
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', function() {
+      clearTimeout(this._timer);
+      this._timer = setTimeout(() => loadApps(this.value), 300);
+    });
+
+    document.getElementById('refreshBtn').addEventListener('click', function() {
+      searchInput.value = '';
+      loadApps('');
+    });
+
+    loadApps();
+  </script>
+</body>
+</html>

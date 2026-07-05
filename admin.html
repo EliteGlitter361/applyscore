@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>系统管理 - 学分申请系统</title>
+  <script src="/custom-dialog.js"></script>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif; background: #f5f7fb; color:#1a1a2e; padding:20px; }
+    .navbar { max-width:1000px; margin:0 auto 24px; background:#fff; border-radius:20px; padding:14px 24px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 2px 12px rgba(0,0,0,0.04); }
+    .navbar h1 { font-size:22px; font-weight:700; color:#2a3b5e; display:flex; align-items:center; gap:10px; }
+    .navbar h1 small { font-size:14px; font-weight:400; color:#6b7a8f; background:#edf2f7; padding:2px 12px; border-radius:20px; }
+    .nav-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .btn { padding:8px 20px; border-radius:40px; font-weight:600; text-decoration:none; border:none; cursor:pointer; font-size:14px; }
+    .btn-outline { background:transparent; color:#2a6df4; border:2px solid #2a6df4; }
+    .btn-outline:hover { background:#2a6df4; color:#fff; }
+    .btn-logout { background:#e53e3e; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-logout:hover { background:#c53030; }
+    .btn-success { background:#10b981; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-success:hover { background:#059669; }
+    .btn-danger { background:#ef4444; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-danger:hover { background:#dc2626; }
+    .btn-primary { background:#2a6df4; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-primary:hover { background:#1a4db5; }
+    .btn-warning { background:#f59e0b; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-warning:hover { background:#d97706; }
+    .container { max-width:1000px; margin:0 auto; }
+    .tabs { display:flex; gap:8px; margin-bottom:24px; border-bottom:2px solid #e2e8f0; padding-bottom:6px; flex-wrap:wrap; }
+    .tab-btn { padding:10px 24px; border:none; background:transparent; font-size:16px; font-weight:600; color:#6b7a8f; cursor:pointer; border-radius:30px 30px 0 0; transition:0.2s; }
+    .tab-btn.active { color:#2a6df4; background:#ebf0ff; }
+    .tab-btn:hover { background:#f0f4ff; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .card { background:#fff; border-radius:20px; padding:24px; box-shadow:0 2px 12px rgba(0,0,0,0.04); margin-bottom:24px; }
+    .card h2 { font-size:18px; font-weight:600; margin-bottom:16px; color:#2a3b5e; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px 12px; text-align:left; border-bottom:1px solid #edf2f7; }
+    th { background:#f8fafc; color:#2a3b5e; font-weight:600; font-size:14px; }
+    td { font-size:14px; }
+    .toggle-btn { background:#edf2f7; border:none; padding:4px 14px; border-radius:30px; cursor:pointer; font-weight:500; transition:0.2s; }
+    .toggle-btn.active { background:#10b981; color:#fff; }
+    .form-group { margin-bottom:12px; }
+    .form-group label { display:block; font-weight:500; margin-bottom:4px; color:#2a3b5e; font-size:14px; }
+    .form-control { width:100%; padding:10px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; }
+    .form-control:focus { border-color:#2a6df4; outline:none; box-shadow:0 0 0 4px rgba(42,109,244,0.1); }
+    .row { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    .empty-state { text-align:center; padding:30px 20px; color:#6b7a8f; font-size:15px; }
+    .log-table-wrap { overflow-x:auto; max-height:400px; overflow-y:auto; }
+    @media (max-width: 768px) {
+      body { padding:12px; }
+      .navbar { flex-direction:column; gap:12px; align-items:stretch; padding:16px; border-radius:16px; }
+      .navbar h1 { font-size:20px; justify-content:center; }
+      .navbar h1 small { font-size:12px; }
+      .nav-actions { justify-content:center; }
+      .btn { font-size:13px; padding:6px 14px; }
+      .card { padding:16px; border-radius:16px; }
+      table { font-size:13px; }
+      th, td { padding:6px 8px; }
+      .row { grid-template-columns:1fr; }
+      .btn-primary, .btn-warning, .btn-success, .btn-danger { width:100%; }
+      .tabs { justify-content:center; }
+      .tab-btn { padding:8px 16px; font-size:14px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1>⚙️ 系统管理 <small>System</small></h1>
+    <div class="nav-actions">
+      <a href="/dashboard.html" class="btn btn-outline">📋 审核台</a>
+      <button class="btn-logout" onclick="logout()">退出登录</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="admins">管理员管理</button>
+      <button class="tab-btn" data-tab="tools">工具</button>
+      <button class="tab-btn" data-tab="logs">登录日志</button>
+    </div>
+
+    <!-- 管理员管理 -->
+    <div id="tab-admins" class="tab-content active">
+      <div class="card">
+        <h2>👑 管理员列表</h2>
+        <div id="adminTable"></div>
+      </div>
+      <div class="card">
+        <h2>➕ 创建管理员</h2>
+        <div class="row">
+          <div class="form-group"><label>用户名</label><input class="form-control" id="newUsername" placeholder="用户名" /></div>
+          <div class="form-group"><label>密码（至少8位）</label><input class="form-control" id="newPassword" type="password" placeholder="密码" /></div>
+        </div>
+        <div class="form-group"><label>角色</label>
+          <select class="form-control" id="newRole">
+            <option value="admin">Admin</option>
+            <option value="system">System</option>
+          </select>
+        </div>
+        <button class="btn-primary" onclick="createAdmin()">创建管理员</button>
+      </div>
+    </div>
+
+    <!-- 工具 -->
+    <div id="tab-tools" class="tab-content">
+      <div class="card">
+        <h2>🔑 修改其他账户密码</h2>
+        <div class="row">
+          <div class="form-group"><label>用户名</label><input class="form-control" id="changePwdUsername" placeholder="用户名" /></div>
+          <div class="form-group"><label>新密码（至少8位）</label><input class="form-control" id="changePwdNewPwd" type="password" placeholder="新密码" /></div>
+        </div>
+        <button class="btn-warning" onclick="changePassword()">修改密码</button>
+      </div>
+
+      <!-- 学分申请入口开关 -->
+      <div class="card">
+        <h2>🔒 学分申请入口开关</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="font-weight:500;">申请入口状态：</label>
+          <button id="toggleEntryBtn" class="btn btn-success" onclick="toggleEntry()">关闭</button>
+          <span id="entryStatus" style="font-weight:600;">当前：开启</span>
+        </div>
+        <div class="form-group">
+          <label>自定义提示文字（当入口关闭时显示）</label>
+          <textarea class="form-control" id="entryMessage" rows="3" placeholder="请输入暂停申请的自定义提示信息"></textarea>
+        </div>
+        <button class="btn-primary" onclick="saveEntrySettings()">保存设置</button>
+        <div id="entrySaveResult" style="margin-top:8px;font-size:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>🗑️ 清空系统数据</h2>
+        <p style="color:#e53e3e;font-weight:600;">警告：此操作将永久删除所有申请数据和学生数据，且不可恢复！管理员账户不受影响。</p>
+        <button class="btn-danger" onclick="clearData()" style="margin-top:12px;">确认清空数据</button>
+      </div>
+    </div>
+
+    <!-- 登录日志 -->
+    <div id="tab-logs" class="tab-content">
+      <div class="card">
+        <h2>📋 登录日志（最近1000条）</h2>
+        <div id="logTableWrap" class="log-table-wrap">
+          <table>
+            <thead><tr><th>用户名</th><th>时间</th><th>IP</th><th>User-Agent</th></tr></thead>
+            <tbody id="logTableBody"></tbody>
+          </table>
+        </div>
+        <div id="logEmpty" class="empty-state" style="display:none;">暂无登录记录</div>
+        <button class="btn-primary" onclick="loadLogs()" style="margin-top:12px;">刷新</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('adminToken');
+    const user = JSON.parse(localStorage.getItem('adminUser') || '{}');
+    if (!token || user.role !== 'system') {
+      window.location.href = '/login.html';
+    }
+
+    let adminsData = [];
+
+    function escapeHtml(str) { const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+
+    // ===== Tab切换 =====
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const tab = this.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        if (tab === 'logs') loadLogs();
+      });
+    });
+
+    // ===== 管理员列表 =====
+    function renderAdminTable(admins) {
+      let html = `<table><tr><th>ID</th><th>用户名</th><th>角色</th><th>审核权限</th><th>封禁权限</th><th>操作</th></tr>`;
+      admins.forEach(u => {
+        html += `<tr>
+          <td>${u.id}</td>
+          <td>${u.username}</td>
+          <td>${u.role}</td>
+          <td><button class="toggle-btn ${u.auditPermission ? 'active' : ''}" onclick="togglePerm('${u.username}', ${u.auditPermission})">${u.auditPermission ? '开启' : '关闭'}</button></td>
+          <td><button class="toggle-btn ${u.canBan ? 'active' : ''}" onclick="toggleBanPerm('${u.username}', ${u.canBan})">${u.canBan ? '允许' : '禁止'}</button></td>
+          <td>${u.role !== 'system' ? `<button class="btn-danger" onclick="deleteAdmin('${u.username}')">删除</button>` : ''}</td>
+        </tr>`;
+      });
+      html += '</table>';
+      document.getElementById('adminTable').innerHTML = html;
+    }
+
+    async function loadAdmins() {
+      try {
+        const res = await fetch('/api/admin', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('获取失败');
+        adminsData = await res.json();
+        renderAdminTable(adminsData);
+      } catch(e) {
+        document.getElementById('adminTable').innerHTML = `<div class="empty-state">加载失败：${e.message}</div>`;
+      }
+    }
+
+    async function togglePerm(username, current) {
+      const newVal = !current;
+      const admin = adminsData.find(a => a.username === username);
+      if (admin) { admin.auditPermission = newVal ? 1 : 0; renderAdminTable(adminsData); }
+      try {
+        await fetch('/api/admin', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ username, auditPermission: newVal ? 1 : 0 })
+        });
+      } catch(e) {
+        if (admin) { admin.auditPermission = current ? 1 : 0; renderAdminTable(adminsData); }
+        showAlert('操作失败', '请重试');
+      }
+    }
+
+    async function toggleBanPerm(username, current) {
+      const newVal = !current;
+      const admin = adminsData.find(a => a.username === username);
+      if (admin) { admin.canBan = newVal; renderAdminTable(adminsData); }
+      try {
+        await fetch('/api/admin', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ username, canBan: newVal })
+        });
+      } catch(e) {
+        if (admin) { admin.canBan = current; renderAdminTable(adminsData); }
+        showAlert('操作失败', '请重试');
+      }
+    }
+
+    async function createAdmin() {
+      const username = document.getElementById('newUsername').value.trim();
+      const password = document.getElementById('newPassword').value;
+      const role = document.getElementById('newRole').value;
+      if (!username || !password) {
+        showAlert('提示', '请填写完整');
+        return;
+      }
+      if (password.length < 8) {
+        showAlert('提示', '密码至少8位');
+        return;
+      }
+      try {
+        const res = await fetch('/api/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ username, password, role })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          showAlert('成功', '创建成功');
+          document.getElementById('newUsername').value = '';
+          document.getElementById('newPassword').value = '';
+          loadAdmins();
+        } else {
+          showAlert('创建失败', data.error);
+        }
+      } catch(e) {
+        showAlert('网络错误', '请重试');
+      }
+    }
+
+    async function deleteAdmin(username) {
+      showConfirm('确认删除', `确定要删除管理员“${username}”吗？`, '确定', '取消', async function(confirmed) {
+        if (!confirmed) return;
+        try {
+          const res = await fetch('/api/admin', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ username })
+          });
+          if (res.ok) { loadAdmins(); } else { const d=await res.json(); showAlert('删除失败', d.error); }
+        } catch(e) { showAlert('网络错误', '请重试'); }
+      });
+    }
+
+    // ===== 修改密码 =====
+    async function changePassword() {
+      const username = document.getElementById('changePwdUsername').value.trim();
+      const newPassword = document.getElementById('changePwdNewPwd').value;
+      if (!username || !newPassword) {
+        showAlert('提示', '请填写完整');
+        return;
+      }
+      if (newPassword.length < 8) {
+        showAlert('提示', '新密码至少8位');
+        return;
+      }
+      showConfirm('确认修改', `确定要修改用户“${username}”的密码吗？`, '确定', '取消', async function(confirmed) {
+        if (!confirmed) return;
+        try {
+          const res = await fetch('/api/admin?action=change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ username, newPassword })
+          });
+          const data = await res.json();
+          if (res.ok) {
+            showAlert('成功', '密码修改成功');
+            document.getElementById('changePwdUsername').value = '';
+            document.getElementById('changePwdNewPwd').value = '';
+          } else {
+            showAlert('失败', data.error);
+          }
+        } catch(e) {
+          showAlert('网络错误', '请重试');
+        }
+      });
+    }
+
+    // ===== 清空数据 =====
+    async function clearData() {
+      showConfirm('⚠️ 危险操作', '确定要清空所有申请数据和学生数据吗？此操作不可恢复！', '确定清空', '取消', async function(confirmed) {
+        if (!confirmed) return;
+        showConfirm('二次确认', '请再次确认：清空所有数据？', '确定清空', '取消', async function(confirmed2) {
+          if (!confirmed2) return;
+          try {
+            const res = await fetch('/api/admin?action=clear-data', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ confirm: 'yes' })
+            });
+            const data = await res.json();
+            if (res.ok) {
+              showAlert('成功', '系统数据已清空');
+            } else {
+              showAlert('失败', data.error);
+            }
+          } catch(e) {
+            showAlert('网络错误', '请重试');
+          }
+        });
+      });
+    }
+
+    // ===== 登录日志 =====
+    async function loadLogs() {
+      const tbody = document.getElementById('logTableBody');
+      const empty = document.getElementById('logEmpty');
+      try {
+        const res = await fetch('/api/admin?action=login-logs', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('获取日志失败');
+        const logs = await res.json();
+        if (logs.length === 0) {
+          tbody.innerHTML = '';
+          empty.style.display = 'block';
+          return;
+        }
+        empty.style.display = 'none';
+        tbody.innerHTML = logs.map(log => `
+          <tr>
+            <td>${escapeHtml(log.username)}</td>
+            <td>${escapeHtml(new Date(log.time).toLocaleString('zh-CN'))}</td>
+            <td>${escapeHtml(log.ip || '未知')}</td>
+            <td style="font-size:12px;word-break:break-all;">${escapeHtml(log.userAgent || '未知')}</td>
+          </tr>
+        `).join('');
+      } catch(e) {
+        tbody.innerHTML = `<tr><td colspan="4" class="empty-state">加载失败：${e.message}</td></tr>`;
+      }
+    }
+
+    // ===== 入口开关管理 =====
+    let entrySettings = { enabled: true, message: '' };
+
+    async function loadEntrySettings() {
+      try {
+        const res = await fetch('/api/settings', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('获取设置失败');
+        entrySettings = await res.json();
+        updateEntryUI();
+      } catch(e) {
+        console.error('加载设置失败', e);
+        // 使用默认值
+        entrySettings = { enabled: true, message: '' };
+        updateEntryUI();
+      }
+    }
+
+    function updateEntryUI() {
+      const btn = document.getElementById('toggleEntryBtn');
+      const status = document.getElementById('entryStatus');
+      const msg = document.getElementById('entryMessage');
+      if (entrySettings.enabled) {
+        btn.textContent = '关闭';
+        btn.className = 'btn btn-danger';
+        status.textContent = '当前：开启';
+        status.style.color = '#10b981';
+      } else {
+        btn.textContent = '开启';
+        btn.className = 'btn btn-success';
+        status.textContent = '当前：关闭';
+        status.style.color = '#ef4444';
+      }
+      msg.value = entrySettings.message || '';
+    }
+
+    function toggleEntry() {
+      entrySettings.enabled = !entrySettings.enabled;
+      updateEntryUI();
+    }
+
+    async function saveEntrySettings() {
+      const message = document.getElementById('entryMessage').value.trim();
+      entrySettings.message = message;
+      const resultDiv = document.getElementById('entrySaveResult');
+      resultDiv.textContent = '保存中...';
+      resultDiv.style.color = '#6b7280';
+      try {
+        const res = await fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ enabled: entrySettings.enabled, message })
+        });
+        const data = await res.json();
+        if (res.ok) {
+          resultDiv.textContent = '✅ 设置保存成功';
+          resultDiv.style.color = '#10b981';
+          setTimeout(() => { resultDiv.textContent = ''; }, 3000);
+        } else {
+          resultDiv.textContent = '❌ ' + (data.error || '保存失败');
+          resultDiv.style.color = '#ef4444';
+        }
+      } catch(e) {
+        resultDiv.textContent = '❌ 网络错误';
+        resultDiv.style.color = '#ef4444';
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      window.location.href = '/login.html';
+    }
+
+    // ===== 初始化 =====
+    loadAdmins();
+    loadEntrySettings();
+  </script>
+</body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>学生管理 - 学分申请系统</title>
+  <script src="/custom-dialog.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    /* 样式同之前，保持不变 */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', 'PingFang SC', sans-serif; background: #f0f4ff; min-height:100vh; padding:20px; }
+    .navbar { max-width:1000px; margin:0 auto 28px; background:rgba(255,255,255,0.8); backdrop-filter:blur(12px); border-radius:40px; padding:12px 28px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 4px 20px rgba(0,0,0,0.04); border:1px solid rgba(255,255,255,0.4); }
+    .navbar h1 { font-size:24px; font-weight:700; color:#0b1e3a; }
+    .nav-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .btn { padding:8px 20px; border-radius:40px; font-weight:600; text-decoration:none; border:none; cursor:pointer; font-size:14px; }
+    .btn-outline { background:transparent; color:#2a6df4; border:2px solid #2a6df4; }
+    .btn-outline:hover { background:#2a6df4; color:#fff; }
+    .btn-logout { background:#e53e3e; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-primary { background:#2a6df4; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-danger { background:#ef4444; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-success { background:#10b981; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .container { max-width:1000px; margin:0 auto; }
+    .card { background:rgba(255,255,255,0.85); backdrop-filter:blur(8px); border-radius:28px; padding:24px; border:1px solid rgba(255,255,255,0.5); box-shadow:0 4px 16px rgba(0,0,0,0.04); margin-bottom:20px; }
+    .card h2 { font-size:20px; font-weight:600; margin-bottom:16px; }
+    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px 12px; text-align:left; border-bottom:1px solid #e2e8f0; }
+    th { background:#f8fafc; font-weight:600; }
+    .checkbox { width:20px; height:20px; cursor:pointer; }
+    .empty { text-align:center; padding:40px 20px; color:#718096; font-size:16px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px; }
+    .form-group { margin-bottom:12px; }
+    .form-group label { display:block; font-weight:500; margin-bottom:4px; font-size:14px; }
+    .form-control { width:100%; padding:10px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; }
+    .form-control:focus { border-color:#2a6df4; outline:none; box-shadow:0 0 0 4px rgba(42,109,244,0.1); }
+    .file-upload-wrap { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .file-upload-wrap input[type="file"] { padding:6px; border:2px dashed #e2e8f0; border-radius:12px; }
+    .import-progress { margin-top:8px; display:none; }
+    .import-progress .progress-bar { width:100%; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; }
+    .import-progress .progress-fill { height:100%; background:#2a6df4; width:0%; transition:width 0.3s; }
+    .import-progress .progress-text { font-size:14px; color:#4a5568; margin-top:4px; }
+
+    @media (max-width: 768px) {
+      body { padding:12px; }
+      .navbar { flex-direction:column; align-items:stretch; gap:10px; padding:16px; border-radius:24px; }
+      .navbar h1 { font-size:20px; text-align:center; }
+      .nav-actions { justify-content:center; }
+      .btn { font-size:13px; padding:6px 14px; }
+      .form-row { grid-template-columns:1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1>👥 学生管理</h1>
+    <div class="nav-actions">
+      <a href="/dashboard.html" class="btn btn-outline">← 返回审核台</a>
+      <div id="systemBtnWrapper" style="display:none;">
+        <a href="/admin.html" class="btn btn-outline">⚙️ 系统管理</a>
+      </div>
+      <button class="btn-logout" onclick="logout()">退出登录</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="card">
+      <h2>📋 学生名单</h2>
+      <div class="toolbar">
+        <button class="btn btn-danger" onclick="deleteSelected()">🗑️ 删除选中</button>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="selectAll" onchange="toggleAll()"> 全选
+        </label>
+        <span style="color:#718096;font-size:14px;">已选 <span id="selectedCount">0</span> 人</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th><input type="checkbox" class="checkbox" id="selectAllTable" onchange="toggleAll()"></th><th>姓名</th><th>学号</th></tr></thead>
+          <tbody id="studentTableBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="empty" style="display:none;">暂无学生数据</div>
+    </div>
+
+    <div class="card">
+      <h2>➕ 手动添加学生</h2>
+      <div class="form-row">
+        <div class="form-group"><label>姓名</label><input class="form-control" id="newName" placeholder="姓名" /></div>
+        <div class="form-group"><label>学号</label><input class="form-control" id="newStudentId" placeholder="学号" /></div>
+      </div>
+      <button class="btn btn-primary" onclick="addStudent()">添加</button>
+    </div>
+
+    <div class="card">
+      <h2>📤 批量导入（xls / xlsx）</h2>
+      <p style="color:#6b7280;font-size:14px;margin-bottom:8px;">文件需包含两列：<strong>姓名</strong> 和 <strong>学号</strong>（第一行为表头），支持无限制数量</p>
+      <div class="file-upload-wrap">
+        <input type="file" id="fileInput" accept=".xls,.xlsx" />
+        <button class="btn btn-success" onclick="importStudents()">导入</button>
+      </div>
+      <div id="importResult" style="margin-top:8px;font-size:14px;color:#10b981;"></div>
+      <div id="importProgress" class="import-progress">
+        <div class="progress-bar"><div class="progress-fill" id="importProgressFill"></div></div>
+        <div class="progress-text" id="importProgressText">0%</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('adminToken');
+    const user = JSON.parse(localStorage.getItem('adminUser') || '{}');
+    if (!token || !user.role) {
+      window.location.href = '/login.html';
+    }
+    if (user.role === 'system') {
+      document.getElementById('systemBtnWrapper').style.display = 'inline-block';
+    }
+
+    let students = [];
+
+    function escapeHtml(str) { const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+
+    async function loadStudents() {
+      try {
+        const res = await fetch('/api/students', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('获取失败');
+        students = await res.json();
+        renderTable();
+      } catch(e) {
+        document.getElementById('studentTableBody').innerHTML = `<tr><td colspan="3" class="empty">加载失败：${escapeHtml(e.message)}</td></tr>`;
+      }
+    }
+
+    function renderTable() {
+      const tbody = document.getElementById('studentTableBody');
+      const empty = document.getElementById('emptyState');
+      if (students.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = 'block';
+        document.getElementById('selectAll').checked = false;
+        document.getElementById('selectAllTable').checked = false;
+        updateSelectedCount();
+        return;
+      }
+      empty.style.display = 'none';
+      tbody.innerHTML = students.map((s, idx) => `
+        <tr>
+          <td><input type="checkbox" class="checkbox student-checkbox" value="${s.studentId}" onchange="updateSelectedCount()" /></td>
+          <td>${escapeHtml(s.name)}</td>
+          <td>${escapeHtml(s.studentId)}</td>
+        </tr>
+      `).join('');
+      document.getElementById('selectAll').checked = false;
+      document.getElementById('selectAllTable').checked = false;
+      updateSelectedCount();
+    }
+
+    function toggleAll() {
+      const checked = document.getElementById('selectAll').checked || document.getElementById('selectAllTable').checked;
+      document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = checked);
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const checked = document.querySelectorAll('.student-checkbox:checked').length;
+      document.getElementById('selectedCount').textContent = checked;
+      const total = document.querySelectorAll('.student-checkbox').length;
+      const allChecked = total > 0 && checked === total;
+      document.getElementById('selectAll').checked = allChecked;
+      document.getElementById('selectAllTable').checked = allChecked;
+    }
+
+    async function addStudent() {
+      const name = document.getElementById('newName').value.trim();
+      const studentId = document.getElementById('newStudentId').value.trim();
+      if (!name || !studentId) {
+        showAlert('提示', '请填写完整');
+        return;
+      }
+      try {
+        const res = await fetch('/api/students', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ name, studentId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || '添加失败');
+        showAlert('成功', '添加成功');
+        document.getElementById('newName').value = '';
+        document.getElementById('newStudentId').value = '';
+        loadStudents();
+      } catch(e) {
+        showAlert('错误', e.message);
+      }
+    }
+
+    async function deleteSelected() {
+      const checked = document.querySelectorAll('.student-checkbox:checked');
+      if (checked.length === 0) {
+        showAlert('提示', '请至少选择一个学生');
+        return;
+      }
+      showConfirm('确认删除', `确定要删除选中的 ${checked.length} 名学生吗？`, '确定', '取消', async function(confirmed) {
+        if (!confirmed) return;
+        const studentIds = Array.from(checked).map(cb => cb.value);
+        try {
+          for (const id of studentIds) {
+            await fetch('/api/students', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ studentId: id })
+            });
+          }
+          loadStudents();
+        } catch(e) {
+          showAlert('网络错误', '请重试');
+        }
+      });
+    }
+
+    // ===== 导入学生（优化：串行、显示进度） =====
+    async function importStudents() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      if (!file) {
+        showAlert('提示', '请选择文件');
+        return;
+      }
+
+      const progressContainer = document.getElementById('importProgress');
+      const progressFill = document.getElementById('importProgressFill');
+      const progressText = document.getElementById('importProgressText');
+      const resultEl = document.getElementById('importResult');
+
+      progressContainer.style.display = 'block';
+      progressFill.style.width = '0%';
+      progressText.textContent = '0%';
+      resultEl.textContent = '正在解析文件...';
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+          const headers = Object.keys(jsonData[0] || {});
+          const nameKey = headers.find(h => /姓名|name/i.test(h));
+          const idKey = headers.find(h => /学号|studentid/i.test(h));
+          if (!nameKey || !idKey) {
+            showAlert('格式错误', '未找到“姓名”和“学号”列，请检查文件格式。');
+            progressContainer.style.display = 'none';
+            return;
+          }
+          const studentsToAdd = jsonData.map(row => ({
+            name: String(row[nameKey]).trim(),
+            studentId: String(row[idKey]).trim()
+          })).filter(s => s.name && s.studentId);
+          if (studentsToAdd.length === 0) {
+            showAlert('提示', '没有有效数据');
+            progressContainer.style.display = 'none';
+            return;
+          }
+
+          resultEl.textContent = `共 ${studentsToAdd.length} 条，开始导入...`;
+          let success = 0, fail = 0;
+          const total = studentsToAdd.length;
+
+          for (let i = 0; i < total; i++) {
+            const s = studentsToAdd[i];
+            try {
+              const res = await fetch('/api/students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ name: s.name, studentId: s.studentId })
+              });
+              if (res.ok) {
+                success++;
+              } else {
+                const err = await res.json();
+                console.warn('导入失败:', s.studentId, err.error);
+                fail++;
+              }
+            } catch (err) {
+              console.warn('网络错误:', s.studentId, err);
+              fail++;
+            }
+            const percent = Math.round(((i + 1) / total) * 100);
+            progressFill.style.width = percent + '%';
+            progressText.textContent = `${percent}% (${i + 1}/${total})`;
+          }
+
+          resultEl.textContent = `导入完成：成功 ${success} 条，失败 ${fail} 条`;
+          progressFill.style.width = '100%';
+          progressText.textContent = `100% (${total}/${total})`;
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+          }, 3000);
+          loadStudents();
+        } catch(err) {
+          showAlert('解析失败', err.message);
+          progressContainer.style.display = 'none';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function logout() {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      window.location.href = '/login.html';
+    }
+
+    loadStudents();
+  </script>
+</body>
+</html>

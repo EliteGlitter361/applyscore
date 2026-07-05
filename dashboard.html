@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=yes">
+  <title>审核工作台 - 学分申请系统</title>
+  <script src="/custom-dialog.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <style>
+    /* ===== 完整样式 ===== */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', 'PingFang SC', sans-serif; background: #f0f4ff; min-height:100vh; padding:20px; }
+    .navbar { max-width:1000px; margin:0 auto 28px; background:rgba(255,255,255,0.8); backdrop-filter:blur(12px); border-radius:40px; padding:12px 28px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 4px 20px rgba(0,0,0,0.04); border:1px solid rgba(255,255,255,0.4); }
+    .navbar h1 { font-size:24px; font-weight:700; color:#0b1e3a; }
+    .nav-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .btn { padding:8px 20px; border-radius:40px; font-weight:600; text-decoration:none; border:none; cursor:pointer; font-size:14px; }
+    .btn-outline { background:transparent; color:#2a6df4; border:2px solid #2a6df4; }
+    .btn-outline:hover { background:#2a6df4; color:#fff; }
+    .btn-logout { background:#e53e3e; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-logout:hover { background:#c53030; }
+    .btn-system { background:#6b7280; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; text-decoration:none; }
+    .btn-system:hover { background:#4b5563; }
+    .btn-danger { background:#ef4444; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-danger:hover { background:#dc2626; }
+    .btn-primary { background:#2a6df4; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-primary:hover { background:#1a4db5; }
+    .btn-success { background:#10b981; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-success:hover { background:#059669; }
+    .btn-warning { background:#f59e0b; color:#fff; border:none; padding:4px 14px; border-radius:30px; cursor:pointer; font-weight:500; }
+    .btn-warning:hover { background:#d97706; }
+    .badge { padding:2px 10px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-success { background:#d4edda; color:#155724; }
+    .badge-danger { background:#f8d7da; color:#721c24; }
+    .container { max-width:1000px; margin:0 auto; }
+    .tabs { display:flex; gap:8px; margin-bottom:16px; border-bottom:2px solid #e2e8f0; padding-bottom:6px; flex-wrap:wrap; }
+    .tab-btn { padding:8px 20px; border:none; background:transparent; font-size:16px; font-weight:600; color:#6b7a8f; cursor:pointer; border-radius:30px 30px 0 0; transition:0.2s; }
+    .tab-btn.active { color:#2a6df4; background:#ebf0ff; }
+    .tab-content { display:none; }
+    .tab-content.active { display:block; }
+    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+    .app-list { display:flex; flex-direction:column; gap:16px; }
+    .app-item { background:rgba(255,255,255,0.85); backdrop-filter:blur(8px); border-radius:28px; padding:20px 24px; border:1px solid rgba(255,255,255,0.5); box-shadow:0 4px 16px rgba(0,0,0,0.04); display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+    .app-item .info { flex:1; min-width:200px; }
+    .app-item .info strong { font-size:18px; }
+    .app-item .info .sub { color:#4a5568; font-size:14px; }
+    .app-item .info .checkbox { width:20px; height:20px; margin-right:12px; cursor:pointer; }
+    .actions { display:flex; gap:8px; flex-wrap:wrap; }
+    .actions button { padding:8px 20px; border:none; border-radius:40px; cursor:pointer; font-weight:600; font-size:14px; }
+    .btn-approve { background:#10b981; color:#fff; }
+    .btn-reject { background:#ef4444; color:#fff; }
+    .btn-skip { background:#f59e0b; color:#fff; }
+    .btn-modify { background:#2a6df4; color:#fff; }
+    .empty { text-align:center; padding:60px 20px; color:#718096; font-size:18px; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px 12px; text-align:left; border-bottom:1px solid #edf2f7; }
+    th { background:#f8fafc; font-weight:600; }
+    .checkbox { width:20px; height:20px; cursor:pointer; }
+    .file-upload-wrap { display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:8px; }
+    .file-upload-wrap input[type="file"] { padding:6px; border:2px dashed #e2e8f0; border-radius:12px; }
+    .import-result { margin-top:8px; font-size:14px; color:#10b981; }
+    .import-progress { margin-top:8px; display:none; }
+    .import-progress .progress-bar { width:100%; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; }
+    .import-progress .progress-fill { height:100%; background:#2a6df4; width:0%; transition:width 0.3s; }
+    .import-progress .progress-text { font-size:14px; color:#4a5568; margin-top:4px; }
+    .card { background:rgba(255,255,255,0.85); backdrop-filter:blur(8px); border-radius:28px; padding:24px; border:1px solid rgba(255,255,255,0.5); box-shadow:0 4px 16px rgba(0,0,0,0.04); margin-bottom:20px; }
+    .card h2 { font-size:20px; font-weight:600; margin-bottom:16px; }
+    @media (max-width: 768px) {
+      body { padding:12px; }
+      .navbar { flex-direction:column; align-items:stretch; gap:10px; padding:16px; border-radius:24px; }
+      .navbar h1 { font-size:20px; text-align:center; }
+      .nav-actions { justify-content:center; }
+      .btn { font-size:13px; padding:6px 14px; }
+      .app-item { padding:16px; border-radius:20px; flex-direction:column; align-items:stretch; }
+      .actions { justify-content:center; }
+      .tabs { justify-content:center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="navbar">
+    <h1>📋 审核工作台</h1>
+    <div class="nav-actions">
+      <div id="systemBtnWrapper" style="display:none;">
+        <a href="/admin.html" class="btn btn-system">⚙️ 系统管理</a>
+      </div>
+      <button class="btn-logout" onclick="logout()">退出登录</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="tabs">
+      <button class="tab-btn active" data-tab="pending">待审核</button>
+      <button class="tab-btn" data-tab="approved">已审核</button>
+      <button class="tab-btn" id="studentTab" data-tab="students" style="display:none;">👥 学生管理</button>
+    </div>
+    <div id="tab-pending" class="tab-content active"></div>
+    <div id="tab-approved" class="tab-content"></div>
+    <div id="tab-students" class="tab-content"></div>
+  </div>
+
+  <script>
+    const token = localStorage.getItem('adminToken');
+    const user = JSON.parse(localStorage.getItem('adminUser') || '{}');
+    if (!token || !user.role) {
+      window.location.href = '/login.html';
+    }
+
+    if (user.role === 'system') {
+      document.getElementById('systemBtnWrapper').style.display = 'inline-block';
+    }
+
+    let currentUserCanBan = false;
+    let allApps = [];
+    let students = [];
+
+    function escapeHtml(str) { const d=document.createElement('div'); d.textContent=str; return d.innerHTML; }
+
+    // ===== 加载管理员信息 =====
+    async function loadAdminInfo() {
+      try {
+        const res = await fetch('/api/admin', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('获取管理员信息失败');
+        const admins = await res.json();
+        const current = admins.find(a => a.username === user.username);
+        if (current) {
+          currentUserCanBan = current.canBan || false;
+          const storedUser = JSON.parse(localStorage.getItem('adminUser') || '{}');
+          storedUser.canBan = currentUserCanBan;
+          localStorage.setItem('adminUser', JSON.stringify(storedUser));
+        } else {
+          currentUserCanBan = false;
+        }
+        const studentTab = document.getElementById('studentTab');
+        if (currentUserCanBan) {
+          studentTab.style.display = 'inline-block';
+        } else {
+          studentTab.style.display = 'none';
+          if (document.querySelector('.tab-btn.active')?.dataset.tab === 'students') {
+            document.querySelector('.tab-btn[data-tab="pending"]').click();
+          }
+        }
+        if (currentUserCanBan) {
+          await loadStudents();
+        }
+        const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'pending';
+        renderTab(activeTab);
+      } catch(e) {
+        console.error('加载管理员信息失败', e);
+        currentUserCanBan = false;
+      }
+    }
+
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        this.classList.add('active');
+        const tab = this.dataset.tab;
+        document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+        document.getElementById('tab-' + tab).classList.add('active');
+        renderTab(tab);
+      });
+    });
+
+    function renderTab(tab) {
+      if (tab === 'pending' || tab === 'approved') {
+        renderAuditTab(tab);
+      } else if (tab === 'students') {
+        renderStudentTab();
+      }
+    }
+
+    // ===== 审核标签 =====
+    function renderAuditTab(tab) {
+      const container = document.getElementById('tab-' + tab);
+      let apps;
+      if (tab === 'pending') {
+        apps = allApps.filter(a => a.status === 'pending');
+      } else if (tab === 'approved') {
+        apps = allApps.filter(a => a.status === 'approved');
+      }
+      if (!apps || apps.length === 0) {
+        container.innerHTML = `<div class="empty">暂无${tab === 'pending' ? '待审核' : '已审核'}申请</div>`;
+        return;
+      }
+
+      if (tab === 'pending') {
+        container.innerHTML = apps.map(app => `
+          <div class="app-item">
+            <div class="info">
+              <strong>${escapeHtml(app.name)}</strong> <span class="sub">学号：${escapeHtml(app.packageName)}</span>
+              <div class="sub">活动：${escapeHtml(app.versionName)} ｜ 时间：${escapeHtml(app.publisher || '')}</div>
+              ${app.participants ? `<div class="sub">参与名单：${escapeHtml(app.participants)}</div>` : ''}
+            </div>
+            <div class="actions">
+              <button class="btn-approve" onclick="auditAction('${app.id}', 'approve')">通过</button>
+              <button class="btn-reject" onclick="auditAction('${app.id}', 'reject')">不通过</button>
+              <button class="btn-modify" onclick="openModify('${app.id}', \`${app.name}\`, \`${app.packageName}\`, \`${app.versionName}\`, \`${app.publisher}\`, \`${app.description || ''}\`, \`${app.participants || ''}\`)">修改</button>
+              <button class="btn-skip" onclick="auditAction('${app.id}', 'skip')">跳过</button>
+            </div>
+          </div>
+        `).join('');
+      } else {
+        container.innerHTML = `
+          <div class="toolbar">
+            <button class="btn btn-danger" onclick="deleteSelected()">🗑️ 删除选中</button>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="selectAllApproved" onchange="toggleAllApproved()"> 全选
+            </label>
+            <span style="color:#718096;font-size:14px;">已选 <span id="selectedApprovedCount">0</span> 条</span>
+          </div>
+          <div class="app-list">
+            ${apps.map(app => `
+              <div class="app-item" data-id="${app.id}">
+                <div class="info">
+                  <input type="checkbox" class="checkbox approved-checkbox" value="${app.id}" onchange="updateSelectedCount()" />
+                  <strong>${escapeHtml(app.name)}</strong> <span class="sub">学号：${escapeHtml(app.packageName)}</span>
+                  <div class="sub">活动：${escapeHtml(app.versionName)} ｜ 时间：${escapeHtml(app.publisher || '')}</div>
+                  ${app.participants ? `<div class="sub">参与名单：${escapeHtml(app.participants)}</div>` : ''}
+                </div>
+                <div class="actions">
+                  <button class="btn-modify" onclick="openModify('${app.id}', \`${app.name}\`, \`${app.packageName}\`, \`${app.versionName}\`, \`${app.publisher}\`, \`${app.description || ''}\`, \`${app.participants || ''}\`)">修改</button>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+        updateSelectedCount();
+      }
+    }
+
+    function toggleAllApproved() {
+      const checked = document.getElementById('selectAllApproved').checked;
+      document.querySelectorAll('.approved-checkbox').forEach(cb => cb.checked = checked);
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const checked = document.querySelectorAll('.approved-checkbox:checked').length;
+      const el = document.getElementById('selectedApprovedCount');
+      if (el) el.textContent = checked;
+      const total = document.querySelectorAll('.approved-checkbox').length;
+      const allChecked = total > 0 && checked === total;
+      const selectAll = document.getElementById('selectAllApproved');
+      if (selectAll) selectAll.checked = allChecked;
+    }
+
+    // ===== 学生管理 =====
+    function renderStudentTab() {
+      const container = document.getElementById('tab-students');
+      if (!currentUserCanBan) {
+        container.innerHTML = `<div class="empty">您没有管理学生的权限</div>`;
+        return;
+      }
+      let html = `
+        <div class="card">
+          <h2>📚 学生名单</h2>
+          <div class="toolbar">
+            <button class="btn btn-danger" onclick="deleteSelectedStudents()">🗑️ 删除选中</button>
+            <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+              <input type="checkbox" id="selectAllStudents" onchange="toggleAllStudents()"> 全选
+            </label>
+            <span style="color:#718096;font-size:14px;">已选 <span id="selectedCount">0</span> 人</span>
+          </div>
+          <div id="studentTableWrapper">
+            <table>
+              <thead><tr>
+                <th><input type="checkbox" class="checkbox" id="selectAllTable" onchange="toggleAllStudents()"></th>
+                <th>姓名</th>
+                <th>学号</th>
+                <th>状态</th>
+                <th>操作</th>
+              </tr></thead>
+              <tbody id="studentTableBody"></tbody>
+            </table>
+          </div>
+          <div id="studentEmpty" class="empty" style="display:none;">暂无学生数据</div>
+        </div>
+        <div class="card">
+          <h2>➕ 手动添加学生</h2>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label>姓名</label><input class="form-control" id="newStudentName" placeholder="姓名" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:12px;" /></div>
+            <div><label>学号</label><input class="form-control" id="newStudentId" placeholder="学号" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:12px;" /></div>
+          </div>
+          <button class="btn-primary" onclick="addStudent()" style="margin-top:12px;">添加</button>
+        </div>
+        <div class="card">
+          <h2>📤 批量导入（xls / xlsx）</h2>
+          <p style="color:#6b7280;font-size:14px;margin-bottom:8px;">文件需包含两列：<strong>姓名</strong> 和 <strong>学号</strong>（第一行为表头），支持无限制数量</p>
+          <div class="file-upload-wrap">
+            <input type="file" id="fileInput" accept=".xls,.xlsx" />
+            <button class="btn-success" onclick="importStudents()">导入</button>
+          </div>
+          <div id="importResult" class="import-result"></div>
+          <div id="importProgress" class="import-progress">
+            <div class="progress-bar"><div class="progress-fill" id="importProgressFill"></div></div>
+            <div class="progress-text" id="importProgressText">0%</div>
+          </div>
+        </div>
+      `;
+      container.innerHTML = html;
+      renderStudentTable();
+    }
+
+    async function loadStudents() {
+      try {
+        const res = await fetch('/api/students', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('获取失败');
+        students = await res.json();
+        if (document.querySelector('.tab-btn.active')?.dataset.tab === 'students') {
+          renderStudentTable();
+        }
+      } catch(e) {
+        console.error('加载学生失败', e);
+      }
+    }
+
+    function renderStudentTable() {
+      const tbody = document.getElementById('studentTableBody');
+      const empty = document.getElementById('studentEmpty');
+      if (!tbody) return;
+      if (students.length === 0) {
+        tbody.innerHTML = '';
+        if (empty) empty.style.display = 'block';
+        document.getElementById('selectAllStudents').checked = false;
+        document.getElementById('selectAllTable').checked = false;
+        updateSelectedCount();
+        return;
+      }
+      if (empty) empty.style.display = 'none';
+      tbody.innerHTML = students.map(s => {
+        const isBanned = s.banned || false;
+        const statusBadge = isBanned ? '<span class="badge badge-danger">已封禁</span>' : '<span class="badge badge-success">正常</span>';
+        const banButton = currentUserCanBan ? 
+          `<button class="btn-warning" onclick="toggleBan('${escapeHtml(s.studentId)}', ${isBanned})">${isBanned ? '解封' : '封禁'}</button>` :
+          '<span style="color:#6b7280;font-size:12px;">无权限</span>';
+        return `<tr>
+          <td><input type="checkbox" class="checkbox student-checkbox" value="${escapeHtml(s.studentId)}" onchange="updateSelectedCount()" /></td>
+          <td>${escapeHtml(s.name)}</td>
+          <td>${escapeHtml(s.studentId)}</td>
+          <td>${statusBadge}</td>
+          <td>${banButton}</td>
+        </tr>`;
+      }).join('');
+      document.getElementById('selectAllStudents').checked = false;
+      document.getElementById('selectAllTable').checked = false;
+      updateSelectedCount();
+    }
+
+    function toggleAllStudents() {
+      const checked = document.getElementById('selectAllStudents').checked || document.getElementById('selectAllTable').checked;
+      document.querySelectorAll('.student-checkbox').forEach(cb => cb.checked = checked);
+      updateSelectedCount();
+    }
+
+    function updateSelectedCount() {
+      const checked = document.querySelectorAll('.student-checkbox:checked').length;
+      const el = document.getElementById('selectedCount');
+      if (el) el.textContent = checked;
+      const total = document.querySelectorAll('.student-checkbox').length;
+      const allChecked = total > 0 && checked === total;
+      const selectAll1 = document.getElementById('selectAllStudents');
+      const selectAll2 = document.getElementById('selectAllTable');
+      if (selectAll1) selectAll1.checked = allChecked;
+      if (selectAll2) selectAll2.checked = allChecked;
+    }
+
+    // ===== 审核操作 =====
+    async function auditAction(id, action, modifications = null) {
+      const body = { id, action };
+      if (action === 'modify' && modifications) body.modifications = modifications;
+      try {
+        const res = await fetch('/api/audit', {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify(body)
+        });
+        if (!res.ok) {
+          const err = await res.json();
+          showAlert('操作失败', err.error || '未知错误');
+          return;
+        }
+        loadAllApps();
+      } catch(e) {
+        showAlert('网络错误', '请重试');
+      }
+    }
+
+    function openModify(id, name, studentId, activity, time, desc, participants) {
+      showPrompt('修改申请', '请输入新的学生姓名', name, '姓名', '确定', '取消', function(newName) {
+        if (newName === null) return;
+        showPrompt('修改申请', '请输入新的学号', studentId, '学号', '确定', '取消', function(newId) {
+          if (newId === null) return;
+          showPrompt('修改申请', '请输入新的活动名称', activity, '活动名称', '确定', '取消', function(newActivity) {
+            if (newActivity === null) return;
+            showPrompt('修改申请', '请输入新的活动时间', time, '时间', '确定', '取消', function(newTime) {
+              if (newTime === null) return;
+              showPrompt('修改申请', '请输入新的参与名单（逗号分隔）', participants || '', '名单', '确定', '取消', function(newParticipants) {
+                let location='', reason='';
+                if (desc) {
+                  const lines = desc.split('\n');
+                  lines.forEach(line => {
+                    if (line.startsWith('地点：')) location = line.replace('地点：','');
+                    else if (line.startsWith('理由：')) reason = line.replace('理由：','');
+                  });
+                }
+                showPrompt('修改申请', '请输入新的活动地点', location, '地点', '确定', '取消', function(newLocation) {
+                  if (newLocation === null) return;
+                  showPrompt('修改申请', '请输入新的申请理由', reason, '理由', '确定', '取消', function(newReason) {
+                    if (newReason === null) return;
+                    const modifications = {};
+                    if (newName) modifications.name = newName;
+                    if (newId) modifications.packageName = newId;
+                    if (newActivity) modifications.versionName = newActivity;
+                    if (newTime) modifications.publisher = newTime;
+                    if (newParticipants !== null) modifications.participants = newParticipants;
+                    let newDesc = '';
+                    if (newLocation) newDesc += '地点：' + newLocation + '\n';
+                    if (newReason) newDesc += '理由：' + newReason;
+                    if (newDesc) modifications.description = newDesc;
+                    auditAction(id, 'modify', modifications);
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    }
+
+    async function deleteSelected() {
+      const checked = document.querySelectorAll('.approved-checkbox:checked');
+      if (checked.length === 0) {
+        showAlert('提示', '请至少选择一个申请');
+        return;
+      }
+      showConfirm('确认删除', `确定要永久删除选中的 ${checked.length} 个申请吗？此操作不可恢复！`, '确定', '取消', async function(confirmed) {
+        if (!confirmed) return;
+        const ids = Array.from(checked).map(cb => cb.value);
+        try {
+          const res = await fetch('/api/apps', {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ ids })
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            showAlert('删除失败', err.error);
+            return;
+          }
+          showAlert('成功', '删除成功');
+          loadAllApps();
+        } catch(e) {
+          showAlert('网络错误', '请重试');
+        }
+      });
+    }
+
+    // ===== 学生相关操作 =====
+    async function addStudent() {
+      const name = document.getElementById('newStudentName').value.trim();
+      const studentId = document.getElementById('newStudentId').value.trim();
+      if (!name || !studentId) {
+        showAlert('提示', '请填写完整');
+        return;
+      }
+      try {
+        const res = await fetch('/api/students', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+          body: JSON.stringify({ name, studentId })
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          showAlert('添加失败', data.error || '未知错误');
+          return;
+        }
+        showAlert('成功', '添加成功');
+        document.getElementById('newStudentName').value = '';
+        document.getElementById('newStudentId').value = '';
+        loadStudents();
+        if (document.querySelector('.tab-btn.active')?.dataset.tab === 'students') {
+          renderStudentTab();
+        }
+      } catch(e) {
+        showAlert('网络错误', '请重试');
+      }
+    }
+
+    async function deleteSelectedStudents() {
+      const checked = document.querySelectorAll('.student-checkbox:checked');
+      if (checked.length === 0) {
+        showAlert('提示', '请至少选择一个学生');
+        return;
+      }
+      showConfirm('确认删除', `确定要删除选中的 ${checked.length} 名学生吗？`, '确定', '取消', async function(confirmed) {
+        if (!confirmed) return;
+        const studentIds = Array.from(checked).map(cb => cb.value);
+        try {
+          for (const id of studentIds) {
+            await fetch('/api/students', {
+              method: 'DELETE',
+              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+              body: JSON.stringify({ studentId: id })
+            });
+          }
+          loadStudents();
+          if (document.querySelector('.tab-btn.active')?.dataset.tab === 'students') {
+            renderStudentTab();
+          }
+        } catch(e) {
+          showAlert('网络错误', '请重试');
+        }
+      });
+    }
+
+    async function toggleBan(studentId, currentBanned) {
+      showConfirm('确认操作', `确定要${currentBanned ? '解封' : '封禁'}该学生吗？`, '确定', '取消', async function(confirmed) {
+        if (!confirmed) return;
+        const newVal = !currentBanned;
+        const student = students.find(s => s.studentId === studentId);
+        if (student) student.banned = newVal;
+        renderStudentTable();
+        try {
+          const res = await fetch('/api/students', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ studentId, banned: newVal })
+          });
+          if (!res.ok) {
+            const err = await res.json();
+            if (student) student.banned = currentBanned;
+            renderStudentTable();
+            showAlert('操作失败', err.error);
+          }
+        } catch(e) {
+          if (student) student.banned = currentBanned;
+          renderStudentTable();
+          showAlert('网络错误', '请重试');
+        }
+      });
+    }
+
+    // ===== 导入学生 =====
+    async function importStudents() {
+      const fileInput = document.getElementById('fileInput');
+      const file = fileInput.files[0];
+      if (!file) {
+        showAlert('提示', '请选择文件');
+        return;
+      }
+
+      const progressContainer = document.getElementById('importProgress');
+      const progressFill = document.getElementById('importProgressFill');
+      const progressText = document.getElementById('importProgressText');
+      const resultEl = document.getElementById('importResult');
+
+      progressContainer.style.display = 'block';
+      progressFill.style.width = '0%';
+      progressText.textContent = '0%';
+      resultEl.textContent = '正在解析文件...';
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
+          const jsonData = XLSX.utils.sheet_to_json(firstSheet);
+          const headers = Object.keys(jsonData[0] || {});
+          const nameKey = headers.find(h => /姓名|name/i.test(h));
+          const idKey = headers.find(h => /学号|studentid/i.test(h));
+          if (!nameKey || !idKey) {
+            showAlert('格式错误', '未找到“姓名”和“学号”列，请检查文件格式。');
+            progressContainer.style.display = 'none';
+            return;
+          }
+          const studentsToAdd = jsonData.map(row => ({
+            name: String(row[nameKey]).trim(),
+            studentId: String(row[idKey]).trim()
+          })).filter(s => s.name && s.studentId);
+          if (studentsToAdd.length === 0) {
+            showAlert('提示', '没有有效数据');
+            progressContainer.style.display = 'none';
+            return;
+          }
+
+          resultEl.textContent = `共 ${studentsToAdd.length} 条，开始导入...`;
+          let success = 0, fail = 0;
+          const total = studentsToAdd.length;
+
+          for (let i = 0; i < total; i++) {
+            const s = studentsToAdd[i];
+            try {
+              const res = await fetch('/api/students', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ name: s.name, studentId: s.studentId })
+              });
+              if (res.ok) {
+                success++;
+              } else {
+                const err = await res.json();
+                console.warn('导入失败:', s.studentId, err.error);
+                fail++;
+              }
+            } catch (err) {
+              console.warn('网络错误:', s.studentId, err);
+              fail++;
+            }
+            const percent = Math.round(((i + 1) / total) * 100);
+            progressFill.style.width = percent + '%';
+            progressText.textContent = `${percent}% (${i + 1}/${total})`;
+          }
+
+          resultEl.textContent = `导入完成：成功 ${success} 条，失败 ${fail} 条`;
+          progressFill.style.width = '100%';
+          progressText.textContent = `100% (${total}/${total})`;
+          setTimeout(() => {
+            progressContainer.style.display = 'none';
+          }, 3000);
+          loadStudents();
+          if (document.querySelector('.tab-btn.active')?.dataset.tab === 'students') {
+            renderStudentTab();
+          }
+        } catch(err) {
+          showAlert('解析失败', err.message);
+          progressContainer.style.display = 'none';
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    // ===== 加载所有申请 =====
+    async function loadAllApps() {
+      try {
+        const res = await fetch('/api/apps', { headers: { 'Authorization': `Bearer ${token}` } });
+        if (!res.ok) throw new Error('获取数据失败');
+        allApps = await res.json();
+        const activeTab = document.querySelector('.tab-btn.active')?.dataset.tab || 'pending';
+        renderTab(activeTab);
+        const tabs = ['pending', 'approved'];
+        tabs.forEach(t => {
+          if (t !== activeTab) renderTab(t);
+        });
+      } catch(e) {
+        document.getElementById('tab-pending').innerHTML = `<div class="empty" style="color:red">加载失败：${escapeHtml(e.message)}</div>`;
+        document.getElementById('tab-approved').innerHTML = `<div class="empty" style="color:red">加载失败：${escapeHtml(e.message)}</div>`;
+      }
+    }
+
+    function logout() {
+      localStorage.removeItem('adminToken');
+      localStorage.removeItem('adminUser');
+      window.location.href = '/login.html';
+    }
+
+    async function init() {
+      await loadAdminInfo();
+      await loadAllApps();
+    }
+    init();
+  </script>
+</body>
+</html>
