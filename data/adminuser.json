@@ -22,5 +22,13 @@
     "role": "admin",
     "auditPermission": 1,
     "canBan": false
+  },
+  {
+    "id": 4,
+    "username": "ysm",
+    "password": "40b3c58a",
+    "role": "admin",
+    "auditPermission": 1,
+    "canBan": false
   }
 ]
