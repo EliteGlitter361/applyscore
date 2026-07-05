@@ -1,0 +1,9 @@
+[
+  {
+    "id": 1,
+    "username": "system",
+    "password": "12ec27f0",
+    "role": "system",
+    "auditPermission": 1
+  }
+]
