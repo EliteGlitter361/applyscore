@@ -6,5 +6,13 @@
     "role": "system",
     "auditPermission": 1,
     "canBan": true
+  },
+  {
+    "id": 2,
+    "username": "yjp",
+    "password": "48eba79e",
+    "role": "admin",
+    "auditPermission": 1,
+    "canBan": false
   }
 ]
