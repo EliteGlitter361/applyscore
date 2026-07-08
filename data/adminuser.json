@@ -13,7 +13,7 @@
     "password": "48eba79e",
     "role": "admin",
     "auditPermission": 1,
-    "canBan": true
+    "canBan": false
   },
   {
     "id": 3,
