@@ -5,7 +5,7 @@
     "password": "12ec27f0",
     "role": "system",
     "auditPermission": 1,
-    "canBan": true
+    "canBan": false
   },
   {
     "id": 2,
