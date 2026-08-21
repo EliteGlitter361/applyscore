@@ -21,7 +21,7 @@
     "password": "35fe3c97",
     "role": "admin",
     "auditPermission": 1,
-    "canBan": false
+    "canBan": true
   },
   {
     "id": 4,
