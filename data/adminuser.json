@@ -28,7 +28,7 @@
     "username": "ysm",
     "password": "40b3c58a",
     "role": "admin",
-    "auditPermission": 0,
+    "auditPermission": 1,
     "canBan": false
   }
 ]
