@@ -12,7 +12,7 @@
     "username": "yjp",
     "password": "48eba79e",
     "role": "admin",
-    "auditPermission": 1,
+    "auditPermission": 0,
     "canBan": false
   },
   {
