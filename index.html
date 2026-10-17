@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="zh-CN" data-page="index">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/route-guard.js?v=1.8"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>学分申请 · 总览 | 学分申请系统</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
+  <link rel="stylesheet" href="/assets/pages/index.css?v=1.8"/>
+  <link rel="stylesheet" href="/feedback.css"/>
+  <link rel="stylesheet" href="/assets/design.css"/>
+  <link rel="stylesheet" href="/assets/mobile-fixes.css?v=1.8"/>
+  <link rel="stylesheet" href="/assets/mobile-v15.css?v=1.8"/>
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js"></script>
+  <script defer src="/custom-dialog.js"></script>
+  <script defer src="/assets/refresh-feedback.js?v=1.8"></script>
+  <script defer src="/assets/app.js?v=1.8"></script>
+</head>
+<body class="page-index">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo">学</span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+
+  <div class="container">
+    <div class="page-header"><h1>学分总览</h1>
+      <div class="nav-actions" id="navActions" aria-label="账户操作"></div></div>
+
+    <div class="search-bar">
+      <input type="text" id="searchInput" placeholder="搜索姓名、学号或活动名称...">
+      <button class="refresh-btn" id="refreshBtn">刷新</button>
+    </div>
+
+    <div class="tabs-wrap">
+      <div class="tabs" role="tablist">
+        <button class="tab-btn active" data-tab="pending" role="tab">待发放的学分</button>
+        <button class="tab-btn" data-tab="needs-fix" role="tab">需要修改的学分</button>
+      </div>
+    </div>
+
+    <div id="tab-pending" class="tab-content active">
+      <div class="app-grid" id="appGridPending">
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+        <div class="skeleton skeleton-card"></div>
+      </div>
+    </div>
+
+    <div id="tab-needs-fix" class="tab-content">
+      <div class="app-grid" id="appGridFix"></div>
+    </div>
+  </div>
+
+  <div class="message-toast-container" id="messageToastContainer"></div>
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

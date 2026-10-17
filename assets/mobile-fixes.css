@@ -1,0 +1,128 @@
+/* v1.4: responsive overflow, form sizing & bfcache state restoration. Loaded last. */
+/* Old standalone HTML styles set 12-20px body padding and display:flex; the
+   Vue shell must be allowed to occupy the complete viewport on every page. */
+html { width:100%; max-width:100%; }
+body { display:block!important; padding:0!important; width:100%!important; max-width:100%; margin:0!important; }
+#app, .app-frame, .app-main, .app-stage, .page-view { min-width:0; }
+.app-frame { width:100%; }
+.page-view .container,.page-view .card,.page-view .tab-content,.page-view .navbar { min-width:0; max-width:100%; }
+.page-view :is(input[type=file],textarea,select,input[type=datetime-local]) { max-width:100%; }
+/* A cached upload page may be restored after upload was disabled. Hide only the
+   form while revalidating; do not hide <html> or the whole application. */
+.history-checking .page-file-upload .page-view #uploadForm { visibility:hidden!important; }
+/* Password/login panels have their own page-level layout, never inherit fixed
+   widths or flex-centering from the legacy body declaration. */
+.is-auth .page-view .login-card { margin-inline:auto!important; }
+@media (max-width:820px) {
+ html, body, #app { max-width:100%; overflow-x:clip; }
+ .app-frame,.app-main,.app-stage,.page-view { width:100%; max-width:100%; min-width:0; }
+ .app-stage { padding:18px 12px calc(102px + env(safe-area-inset-bottom))!important; }
+ .page-view .container,.page-view .tab-content,.page-view .card { width:100%!important; min-width:0!important; }
+ .page-view .card { padding:16px 14px!important; border-radius:16px!important; }
+ .page-view .card h2 { font-size:17px!important; margin-bottom:15px!important; }
+ .page-view .navbar { align-items:flex-start!important; gap:9px!important; }
+ .page-view .navbar h1,.page-view .page-header h1 { font-size:clamp(20px,5.6vw,25px)!important; }
+ .page-view .tabs-wrap { width:100%; max-width:100%; overflow-x:auto!important; -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain; }
+ .page-view .tabs { width:max-content!important; max-width:none!important; overflow:visible!important; }
+ .page-view .tab-btn { min-width:max-content; min-height:43px!important; }
+ .page-view .row,.page-view .form-row { display:grid!important; grid-template-columns:minmax(0,1fr)!important; }
+ .page-view .row>*,.page-view .form-row>*,.page-view .form-group { min-width:0!important; }
+ .page-view .toolbar,.page-view .nav-actions,.page-view .modal-toolbar { max-width:100%; gap:8px!important; }
+ .page-view .toolbar :is(button,a),.page-view .nav-actions :is(button,a) { max-width:100%; white-space:normal!important; }
+ .page-view :is(input,textarea,select) { min-width:0; }
+ .page-view input[type=file] { width:100%!important; max-width:100%!important; overflow:hidden; }
+ .page-view .file-upload-wrap,.page-view .upload-wrapper { max-width:100%; min-width:0; }
+ .page-view :is(.table-wrap,.log-table-wrap,.data-table-scroll,div[style*="overflow-x:auto"],div[style*="overflow-x: auto"]) {
+   display:block; width:100%; max-width:100%; overflow-x:auto!important;
+   -webkit-overflow-scrolling:touch; overscroll-behavior-x:contain;
+ }
+ .page-view table { min-width:550px!important; width:100%!important; }
+ .page-view th,.page-view td { padding:9px 10px!important; font-size:12px!important; vertical-align:middle; }
+ .page-view :is(.modal-overlay,.msg-detail-overlay) { padding:10px!important; align-items:center!important; }
+ .page-view .modal-card { width:100%!important; max-width:100%!important; max-height:calc(100dvh - 36px)!important; border-radius:18px!important; min-width:0; }
+ .page-view .modal-header,.page-view .modal-body,.page-view .modal-tabs { padding-left:14px!important; padding-right:14px!important; min-width:0; }
+ .page-view .modal-tabs { overflow-x:auto; }
+ .page-view .modal-body > div[style*="overflow-x:auto"] { overflow-x:auto!important; }
+ .page-view .stat-grid { grid-template-columns:minmax(0,1fr)!important; }
+ .page-view .msg-item .msg-main { min-width:0!important; width:100%; }
+ .page-view .msg-item .msg-meta { min-width:0; flex-wrap:wrap; }
+ .page-view .msg-item .msg-time { white-space:normal!important; overflow-wrap:anywhere; }
+ .page-view :is(.app-item,.detail-card,.msg-item,.app-card) { max-width:100%; min-width:0; }
+ .page-view :is(.student-id,.pwd-code,.file-link,.msg-detail-content) { overflow-wrap:anywhere; word-break:break-word; }
+ .mobile-dock small { max-width:100%; white-space:normal!important; text-align:center; overflow-wrap:anywhere; font-size:10px; }
+ .mobile-dock { gap:2px; }
+ .is-auth .app-stage.auth-stage { display:flex!important; align-items:center; justify-content:center; padding:22px 14px 30px!important; min-height:calc(100dvh - 63px); }
+ .is-auth .page-view { width:100%!important; max-width:520px!important; display:block!important; align-self:auto!important; }
+ .is-auth .page-view .login-card { width:100%!important; max-width:520px!important; min-height:min(540px,calc(100dvh - 112px)); padding:clamp(27px,6.5vw,38px) clamp(21px,5.5vw,34px)!important; display:flex!important; flex-direction:column; justify-content:center; border-radius:22px!important; }
+ .is-auth .page-view .login-card h2 { font-size:clamp(23px,6vw,28px)!important; margin-bottom:16px!important; }
+ .is-auth .page-view .login-card .form-group { margin-bottom:19px!important; }
+ .is-auth .page-view .login-card :is(input,button[type=submit],.btn-submit) { min-height:48px!important; }
+ .is-auth .page-view .login-card .btn-back { min-height:38px; }
+ /* Administrative and student management lists become true, one-column cards;
+    other report tables retain a consciously scrollable data region. */
+ .page-admin #adminTable { max-width:100%; min-width:0; }
+ .page-admin #adminTable table, .page-admin #tab-students table { display:block!important; min-width:0!important; width:100%!important; border-collapse:separate!important; }
+ .page-admin #adminTable table>tbody,.page-admin #tab-students table>tbody { display:grid!important; gap:10px; width:100%; min-width:0; }
+ .page-admin #adminTable table tr:first-child,.page-admin #tab-students table>thead { display:none!important; }
+ .page-admin #adminTable table>tbody>tr:not(:first-child),.page-admin #tab-students table>tbody>tr {
+   display:block!important; min-width:0; width:100%; padding:8px 12px!important;
+   border:1px solid #e1e9f5; background:#f8faff; border-radius:13px;
+ }
+ .page-admin #adminTable table>tbody>tr>td,.page-admin #tab-students table>tbody>tr>td {
+   min-width:0; width:100%; min-height:36px; border:0!important;
+   padding:7px 0!important; display:grid!important;
+   grid-template-columns:minmax(72px,30%) minmax(0,1fr); align-items:start;
+   column-gap:12px; overflow-wrap:anywhere; word-break:break-word;
+ }
+ .page-admin #adminTable table>tbody>tr>td:not(:last-child),.page-admin #tab-students table>tbody>tr>td:not(:last-child) {
+   border-bottom:1px dashed #e5ecf5!important;
+ }
+ .page-admin #adminTable table td::before,.page-admin #tab-students table td::before { color:#72829a;font-size:12px;font-weight:650;white-space:normal;align-self:center; }
+ .page-admin #adminTable table td:nth-child(1)::before { content:"编号"; }
+ .page-admin #adminTable table td:nth-child(2)::before { content:"用户名"; }
+ .page-admin #adminTable table td:nth-child(3)::before { content:"角色"; }
+ .page-admin #adminTable table td:nth-child(4)::before { content:"审核权限"; }
+ .page-admin #adminTable table td:nth-child(5)::before { content:"封禁权限"; }
+ .page-admin #adminTable table td:nth-child(6)::before { content:"操作"; }
+ .page-admin #tab-students table td:nth-child(1)::before { content:"选择"; }
+ .page-admin #tab-students table td:nth-child(2)::before { content:"姓名"; }
+ .page-admin #tab-students table td:nth-child(3)::before { content:"学号"; }
+ .page-admin #tab-students table td:nth-child(4)::before { content:"密码"; }
+ .page-admin #tab-students table td:nth-child(5)::before { content:"状态"; }
+ .page-admin #tab-students table td:nth-child(6)::before { content:"操作"; }
+ .page-admin #adminTable table td:last-child,.page-admin #tab-students table td:last-child { display:flex!important; flex-wrap:wrap; align-items:center; gap:6px; }
+ .page-admin #adminTable table td:last-child::before,.page-admin #tab-students table td:last-child::before { flex:0 0 30%; }
+ .page-admin #tab-students table td:last-child .btn { margin:0!important; min-height:34px; }
+ .page-admin #tab-students table>tbody>tr>td[colspan],.page-admin #adminTable table td[colspan] { display:block!important; }
+ .page-admin #tab-students table>tbody>tr>td[colspan]::before { display:none!important; }
+ .page-admin .student-option { min-width:0; }
+ .page-admin .student-option .student-id { overflow-wrap:anywhere; }
+ .page-admin .modal-overlay table { min-width:520px!important; }
+}
+@media(max-width:380px) {
+ .app-stage { padding-left:10px!important; padding-right:10px!important; }
+ .app-topbar { padding-left:12px!important; padding-right:12px!important; }
+ .page-view .card { padding:14px 11px!important; }
+ .page-view .nav-actions { gap:5px!important; }
+ .page-view .btn { max-width:100%; }
+ .page-admin #adminTable table>tbody>tr>td,.page-admin #tab-students table>tbody>tr>td { grid-template-columns:70px minmax(0,1fr);gap:7px; }
+}
+@media (prefers-reduced-motion:reduce) { .app-sidebar,.mobile-dock { scroll-behavior:auto!important; } }
+
+/* tablet / small laptop: retain a usable table scroller beside the sidebar */
+@media (min-width:821px) and (max-width:1100px) {
+ .page-admin #adminTable { width:100%;max-width:100%;overflow-x:auto;-webkit-overflow-scrolling:touch; }
+ .page-admin #adminTable table { min-width:760px; }
+ .page-view :is(.table-wrap,.log-table-wrap,div[style*="overflow-x:auto"]) { max-width:100%;overflow-x:auto!important; }
+ .app-stage { padding-inline:18px; }
+}
+/* Never allow long file names or codes to expand a flex item beyond viewport */
+@media(max-width:820px) {
+ .page-dashboard .page-view .app-item .info { min-width:0!important; }
+ .page-index .page-view .search-bar { flex-wrap:wrap!important;width:100%!important; }
+ .page-index .page-view .search-bar input { flex:1 1 160px!important;max-width:100%!important;min-width:0!important; }
+ .page-view :is(.audit-modal-card,.confirm-card,.requirement-modal-card,.msg-detail-card) { max-width:calc(100vw - 24px)!important;min-width:0!important; }
+ .page-detail .page-view .action-bar { flex-wrap:wrap; }
+ .page-detail .page-view .action-bar .btn { min-width:0!important;flex:1 1 135px; }
+ .page-upload .page-view form,.page-file-upload .page-view form { width:100%!important;max-width:100%!important;padding:18px 15px!important; }
+}

@@ -1,0 +1,435 @@
+<!doctype html>
+<html lang="zh-CN" data-page="admin">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/route-guard.js?v=1.8"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>系统管理 | 学分申请系统</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
+  <link rel="stylesheet" href="/assets/pages/admin.css?v=1.8"/>
+  <link rel="stylesheet" href="/feedback.css"/>
+  <link rel="stylesheet" href="/assets/design.css"/>
+  <link rel="stylesheet" href="/assets/mobile-fixes.css?v=1.8"/>
+  <link rel="stylesheet" href="/assets/mobile-v15.css?v=1.8"/>
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js"></script>
+  <script defer src="/custom-dialog.js"></script>
+  <script defer src="/assets/refresh-feedback.js?v=1.8"></script>
+  <script defer src="/assets/app.js?v=1.8"></script>
+</head>
+<body class="page-admin">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo">学</span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+  <div class="navbar">
+    <h1>系统管理 <small>System</small></h1>
+  </div>
+  <div class="container">
+    <div class="admin-tab-switcher">
+      <label class="admin-mobile-tab-select">管理功能
+        <select v-model="activeTab" @change="changeTab(activeTab)" aria-label="选择系统管理选项卡">
+          <option value="admins">管理员管理</option>
+          <option value="students">学生管理</option>
+          <option value="messages">消息发送</option>
+          <option value="tools">工具</option>
+          <option value="files">文件管理</option>
+          <option value="maintenance">系统维护</option>
+          <option value="logs">登录日志</option>
+          <option value="about">（关于）系统信息设置</option>
+        </select>
+      </label>
+    <div class="tabs-wrap">
+      <div class="tabs" role="tablist">
+        <button class="tab-btn" :class="{active:activeTab==='admins'}" @click="changeTab('admins')" data-tab="admins" role="tab">管理员管理</button>
+        <button class="tab-btn" :class="{active:activeTab==='students'}" @click="changeTab('students')" data-tab="students" role="tab">学生管理</button>
+        <button class="tab-btn" :class="{active:activeTab==='messages'}" @click="changeTab('messages')" data-tab="messages" role="tab">消息发送</button>
+        <button class="tab-btn" :class="{active:activeTab==='tools'}" @click="changeTab('tools')" data-tab="tools" role="tab">工具</button>
+        <button class="tab-btn" :class="{active:activeTab==='files'}" @click="changeTab('files')" data-tab="files" role="tab">文件管理</button>
+        <button class="tab-btn" :class="{active:activeTab==='maintenance'}" @click="changeTab('maintenance')" data-tab="maintenance" role="tab">系统维护</button>
+        <button class="tab-btn" :class="{active:activeTab==='logs'}" @click="changeTab('logs')" data-tab="logs" role="tab">登录日志</button>
+        <button class="tab-btn" :class="{active:activeTab==='about'}" @click="changeTab('about')" data-tab="about" role="tab">（关于）系统信息设置</button>
+      </div>
+    </div>
+
+    </div>
+
+    <!-- 管理员管理 -->
+    <div id="tab-admins" class="tab-content" :class="{active:activeTab==='admins'}">
+      <div class="card">
+        <h2>管理员列表</h2>
+        <div id="adminTable" aria-live="polite">
+          <div v-if="adminListError" class="empty-state" role="alert">{{adminListError}}</div>
+          <div v-else-if="adminRows === null"><div class="skeleton-table-row"></div><div class="skeleton-table-row"></div></div>
+          <div v-else-if="adminRows.length === 0" class="empty-state">暂无管理员</div>
+          <table v-else class="vue-admin-table">
+            <thead><tr><th>ID</th><th>用户名</th><th>角色</th><th>审核权限</th><th>封禁权限</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr v-for="u in adminRows" :key="u.id || u.username">
+                <td>{{u.id}}</td><td>{{u.username}}</td><td>{{u.role}}</td>
+                <td><button class="toggle-btn" :class="{active:!!u.auditPermission}" @click="invokePageAction('togglePerm', $event.currentTarget, u.username, !!u.auditPermission)">{{u.auditPermission ? '开启':'关闭'}}</button></td>
+                <td><button class="toggle-btn" :class="{active:!!u.canBan}" @click="invokePageAction('toggleBanPerm', $event.currentTarget, u.username, !!u.canBan)">{{u.canBan ? '允许':'禁止'}}</button></td>
+                <td><button v-if="u.role !== 'system'" class="btn btn-danger btn-small" @click="invokePageAction('deleteAdmin', $event.currentTarget, u.username)">删除</button></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <h2>创建管理员</h2>
+        <div class="row">
+          <div class="form-group"><label>用户名</label><input class="form-control" id="newUsername" placeholder="用户名" /></div>
+          <div class="form-group"><label>密码（至少8位）</label><input class="form-control" id="newPassword" type="password" placeholder="密码" /></div>
+        </div>
+        <div class="form-group"><label>角色</label>
+          <select class="form-control" id="newRole">
+            <option value="admin">Admin</option>
+            <option value="system">System</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" @click="invokePageAction('createAdmin', $event.currentTarget)">创建管理员</button>
+      </div>
+    </div>
+
+    <!-- 学生管理 -->
+    <div id="tab-students" class="tab-content" :class="{active:activeTab==='students'}">
+      <div class="card">
+        <h2>学生名单</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+          <button class="btn btn-danger" @click="invokePageAction('deleteSelectedStudents', $event.currentTarget)">删除选中</button>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="selectAllStudents" @change="invokePageAction('toggleAllStudents')"> 全选
+          </label>
+          <span style="color:#718096;font-size:14px;">已选 <span id="selectedCount">0</span> 人</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th><input type="checkbox" class="checkbox" id="selectAllTable" @change="invokePageAction('toggleAllStudents')"></th>
+              <th>姓名</th>
+              <th>学号</th>
+              <th>密码</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr></thead>
+            <tbody id="studentTableBody"></tbody>
+          </table>
+        </div>
+        <div id="studentEmpty" class="empty-state" style="display:none;">暂无学生数据</div>
+      </div>
+
+      <div class="card">
+        <h2>手动添加学生</h2>
+        <div class="row">
+          <div class="form-group"><label>姓名</label><input class="form-control" id="newStudentName" placeholder="姓名" /></div>
+          <div class="form-group"><label>学号</label><input class="form-control" id="newStudentId" placeholder="学号" /></div>
+        </div>
+        <div class="form-group"><label>登录密码（可留空，学生将无法登录）</label><input class="form-control" id="newStudentPassword" placeholder="为学生设置登录密码" /></div>
+        <button class="btn btn-primary" @click="invokePageAction('addStudent', $event.currentTarget)">添加</button>
+      </div>
+
+      <div class="card">
+        <h2>批量导入（xls / xlsx）</h2>
+        <p style="color:#6b7280;font-size:14px;margin-bottom:8px;">文件需包含列：<strong>姓名</strong> 和 <strong>学号</strong>，可选 <strong>密码</strong> 列</p>
+        <div style="display:flex;gap:12px;align-items:center;flex-wrap:wrap;">
+          <input type="file" id="fileInput" accept=".xls,.xlsx" style="padding:6px;border:2px dashed #e2e8f0;border-radius:12px;" />
+          <button class="btn btn-success" @click="invokePageAction('importStudents', $event.currentTarget)">导入</button>
+        </div>
+        <div id="importResult" style="margin-top:8px;font-size:14px;color:#10b981;"></div>
+        <div id="importProgress" class="import-progress">
+          <div class="progress-bar"><div class="progress-fill" id="importProgressFill"></div></div>
+          <div class="progress-text" id="importProgressText">0%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 消息发送 -->
+    <div id="tab-messages" class="tab-content" :class="{active:activeTab==='messages'}">
+      <div class="card">
+        <h2>向学生发送消息</h2>
+        <div class="form-group">
+          <label>选择接收学生（可多选）</label>
+          <div style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-small" @click="invokePageAction('selectAllMsgStudents')">全选</button>
+            <button class="btn btn-outline btn-small" @click="invokePageAction('clearAllMsgStudents')">清空选择</button>
+            <span style="color:#6b7a8f;font-size:13px;align-self:center;">已选 <span id="msgSelectedCount">0</span> 人</span>
+          </div>
+          <div class="student-select-list" id="msgStudentList">
+            <div class="empty-state">加载中...</div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>消息标题</label>
+          <input class="form-control" id="msgTitle" placeholder="请输入消息标题" />
+        </div>
+        <div class="form-group">
+          <label>消息内容</label>
+          <textarea class="form-control" id="msgContent" rows="5" placeholder="请输入消息内容..."></textarea>
+        </div>
+        <button class="btn btn-primary" :disabled="adminProgress.busy" @click="invokePageAction('sendCustomMessage', $event.currentTarget)">发送消息</button>
+        <div id="msgSendResult" style="margin-top:12px;font-size:14px;"></div>
+      </div>
+    </div>
+
+    <!-- 工具 -->
+    <div id="tab-tools" class="tab-content" :class="{active:activeTab==='tools'}">
+      <div class="card">
+        <h2>修改其他账户密码</h2>
+        <div class="row">
+          <div class="form-group"><label>用户名</label><input class="form-control" id="changePwdUsername" placeholder="用户名" /></div>
+          <div class="form-group"><label>新密码（至少8位）</label><input class="form-control" id="changePwdNewPwd" type="password" placeholder="新密码" /></div>
+        </div>
+        <button class="btn btn-warning" @click="invokePageAction('changePassword', $event.currentTarget)">修改密码</button>
+      </div>
+
+      <div class="card">
+        <h2>学分申请入口开关</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="font-weight:500;">申请入口状态：</label>
+          <button id="toggleEntryBtn" class="btn btn-success" @click="invokePageAction('toggleEntry')">关闭</button>
+          <span id="entryStatus" style="font-weight:600;">当前：开启</span>
+        </div>
+        <div class="form-group">
+          <label>自定义提示文字（当入口关闭时显示）</label>
+          <textarea class="form-control" id="entryMessage" rows="3"></textarea>
+        </div>
+        <button class="btn btn-primary" @click="invokePageAction('saveEntrySettings', $event.currentTarget)">保存设置</button>
+        <div id="entrySaveResult" style="margin-top:8px;font-size:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>文件上传设置</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="font-weight:500;">文件上传入口：</label>
+          <button id="toggleFileUploadBtn" class="btn btn-success" @click="invokePageAction('toggleFileUpload')">关闭</button>
+          <span id="fileUploadStatus" style="font-weight:600;">当前：开启</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="font-weight:500;">允许多文件上传：</label>
+          <button id="toggleMultipleBtn" class="btn btn-success" @click="invokePageAction('toggleMultiple')">禁止</button>
+          <span id="multipleStatus" style="font-weight:600;">当前：允许</span>
+        </div>
+        <div class="form-group">
+          <label>每个学生最大提交次数</label>
+          <input type="number" class="form-control" id="maxSubmissions" min="1" value="1" />
+        </div>
+        <div class="form-group">
+          <label>单个文件大小限制</label>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:8px;">
+            <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="fileSizeMode" value="20"> 20MB</label>
+            <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="fileSizeMode" value="50"> 50MB</label>
+            <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="fileSizeMode" value="100"> 100MB</label>
+            <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="fileSizeMode" value="custom"> 自定义</label>
+            <input type="number" id="customFileSize" placeholder="MB" min="1" style="display:none;width:100px;padding:6px;border:2px solid #e2e8f0;border-radius:8px;">
+          </div>
+          <div id="fileSizePreview" style="font-size:13px;color:#6b7280;"></div>
+        </div>
+        <div class="form-group">
+          <label>上传截止时间</label>
+          <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:8px;">
+            <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="deadlineMode" value="none" checked> 不限制</label>
+            <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="deadlineMode" value="duration"> 按时长</label>
+            <label style="display:flex;align-items:center;gap:4px;"><input type="radio" name="deadlineMode" value="date"> 按日期时间</label>
+          </div>
+          <div id="durationInputs" style="display:none;gap:8px;flex-wrap:wrap;">
+            <input type="number" id="deadlineHours" placeholder="时" min="0" style="width:70px;padding:6px;border:2px solid #e2e8f0;border-radius:8px;">
+            <input type="number" id="deadlineMinutes" placeholder="分" min="0" style="width:70px;padding:6px;border:2px solid #e2e8f0;border-radius:8px;">
+            <input type="number" id="deadlineSeconds" placeholder="秒" min="0" style="width:70px;padding:6px;border:2px solid #e2e8f0;border-radius:8px;">
+          </div>
+          <div id="dateInput" style="display:none;">
+            <input type="datetime-local" id="deadlineDate" style="padding:8px;border:2px solid #e2e8f0;border-radius:8px;">
+          </div>
+          <div id="deadlinePreview" style="margin-top:8px;font-size:14px;color:#6b7280;"></div>
+        </div>
+        <button class="btn btn-primary" @click="invokePageAction('saveFileUploadSettings', $event.currentTarget)">保存文件上传设置</button>
+        <div id="fileUploadSaveResult" style="margin-top:8px;font-size:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>上传要求弹窗</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="font-weight:500;">弹窗状态：</label>
+          <button id="toggleRequirementBtn" class="btn btn-success" @click="invokePageAction('toggleRequirement')">关闭</button>
+          <span id="requirementStatus" style="font-weight:600;">当前：开启</span>
+        </div>
+        <div class="form-group">
+          <label>弹窗内容（学生每次打开上传页面时显示）</label>
+          <textarea class="form-control" id="requirementMessage" rows="5"></textarea>
+        </div>
+        <button class="btn btn-primary" @click="invokePageAction('saveRequirementSettings', $event.currentTarget)">保存弹窗设置</button>
+        <div id="requirementSaveResult" style="margin-top:8px;font-size:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>主页公告</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="font-weight:500;">公告状态：</label>
+          <button id="toggleAnnouncementBtn" class="btn btn-success" @click="invokePageAction('toggleAnnouncement')">关闭</button>
+          <span id="announcementStatus" style="font-weight:600;">当前：关闭</span>
+        </div>
+        <div class="form-group">
+          <label>公告标题</label>
+          <input type="text" class="form-control" id="announcementTitle" placeholder="系统公告" />
+        </div>
+        <div class="form-group">
+          <label>公告内容（进入主页时弹窗显示）</label>
+          <textarea class="form-control" id="announcementMessage" rows="5"></textarea>
+        </div>
+        <button class="btn btn-primary" @click="invokePageAction('saveAnnouncementSettings', $event.currentTarget)">保存公告设置</button>
+        <div id="announcementSaveResult" style="margin-top:8px;font-size:14px;"></div>
+      </div>
+
+      <div class="card">
+        <h2>清空系统数据</h2>
+        <p style="color:#e53e3e;font-weight:600;">警告：此操作将永久删除所有申请数据和学生数据，且不可恢复！</p>
+        <button class="btn btn-danger" @click="invokePageAction('clearData', $event.currentTarget)" style="margin-top:12px;">确认清空数据</button>
+      </div>
+    </div>
+
+    <!-- 文件管理 -->
+    <div id="tab-files" class="tab-content" :class="{active:activeTab==='files'}">
+      <div class="card">
+        <h2>已上传文件</h2>
+        <div style="margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-primary" @click="refreshPageAction('loadUploads', $event.currentTarget)">刷新</button>
+          <button class="btn btn-success" :disabled="adminProgress.busy" @click="invokePageAction('downloadAllZip', $event.currentTarget)">打包下载全部</button>
+          <button class="btn btn-warning" @click="invokePageAction('openSubmissionModal')">提交状态</button>
+          <span class="refresh-indicator" id="fileRefreshIndicator" style="display:none;"><span class="dot"></span>实时刷新中</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr><th>姓名</th><th>学号</th><th>文件名</th><th>上传时间</th><th>操作</th></tr></thead>
+            <tbody id="uploadTableBody"></tbody>
+          </table>
+        </div>
+        <div id="uploadEmpty" class="empty-state" style="display:none;">暂无上传记录</div>
+      </div>
+    </div>
+
+    <!-- 系统维护 -->
+    <div id="tab-maintenance" class="tab-content" :class="{active:activeTab==='maintenance'}">
+      <div class="card">
+        <h2>冗余数据扫描与清理</h2>
+        <p style="color:#6b7280;font-size:14px;margin-bottom:16px;">
+          冗余数据是指除了<strong>待发放学分（approved）</strong>、<strong>需要修改学分（needs_fix）</strong>、<strong>待审核学分（pending）</strong>之外的所有学分活动数据。
+        </p>
+        <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" @click="invokePageAction('scanRedundantData', $event.currentTarget)">扫描冗余数据</button>
+          <button class="btn btn-danger" @click="invokePageAction('cleanRedundantData', $event.currentTarget)">清理全部冗余数据</button>
+        </div>
+        <div class="stat-grid" id="maintenanceStats" style="display:none;">
+          <div class="stat-card"><div class="stat-label">总活动数量</div><div class="stat-value" id="statTotalCount">0</div></div>
+          <div class="stat-card"><div class="stat-label">有效活动数量</div><div class="stat-value" id="statValidCount">0</div></div>
+          <div class="stat-card warning"><div class="stat-label">冗余活动数量</div><div class="stat-value" id="statRedundantCount">0</div></div>
+          <div class="stat-card warning"><div class="stat-label">冗余数据占用</div><div class="stat-value" id="statRedundantSize">0<span class="stat-unit">KB</span></div></div>
+        </div>
+        <div id="redundantListWrap" style="display:none;margin-top:20px;">
+          <h3 style="font-size:16px;font-weight:600;margin-bottom:12px;color:#2a3b5e;">冗余活动列表</h3>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>姓名</th><th>学号</th><th>活动名称</th><th>状态</th><th>创建时间</th></tr></thead>
+              <tbody id="redundantTableBody"></tbody>
+            </table>
+          </div>
+          <div id="redundantEmpty" class="empty-state" style="display:none;">没有冗余数据</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- About information: system-only editor (Gitee data/about.json). -->
+    <section id="tab-about" class="tab-content" :class="{active:activeTab==='about'}">
+      <div class="card about-editor">
+        <div class="about-editor-top">
+          <div><h2>（关于）系统信息设置</h2><p>以下内容将在左侧导航的“关于”页面公开展示。保存后写入 Gitee 仓库的 <code>data/about.json</code>。</p></div>
+          <a class="btn btn-outline" href="/about.html?view=admin">查看关于页面 ↗</a>
+        </div>
+        <div v-if="aboutStatus==='loading'" class="about-state" role="status">正在加载 Gitee 系统信息…</div>
+        <div v-else-if="aboutStatus==='error'" class="about-state" role="alert">{{aboutError}} <button class="btn btn-outline" @click="loadAboutInfo()">重新加载</button></div>
+        <form v-else class="about-edit-form" @submit.prevent="saveAboutInfo()">
+          <div class="form-group"><label for="aboutTitle">关于页面标题 *</label><input id="aboutTitle" class="form-control" v-model.trim="aboutInfo.title" maxlength="70" required :disabled="aboutSaving || adminProgress.busy" placeholder="例如：关于学分服务中心" /></div>
+          <div class="form-group"><label for="aboutSubtitle">副标题</label><input id="aboutSubtitle" class="form-control" v-model.trim="aboutInfo.subtitle" maxlength="120" :disabled="aboutSaving || adminProgress.busy" /></div>
+          <div class="form-group"><label for="aboutDescription">系统介绍</label><textarea id="aboutDescription" rows="7" class="form-control" v-model="aboutInfo.description" maxlength="3000" :disabled="aboutSaving || adminProgress.busy" placeholder="请输入关于系统的介绍、使用说明等"></textarea><small>支持多行纯文本，不执行 HTML 或脚本</small></div>
+          <div class="about-edit-grid">
+            <div class="form-group"><label for="aboutOrganization">单位 / 维护团队</label><input id="aboutOrganization" class="form-control" v-model.trim="aboutInfo.organization" maxlength="120" :disabled="aboutSaving || adminProgress.busy" /></div>
+            <div class="form-group"><label for="aboutVersion">系统版本</label><input id="aboutVersion" class="form-control" v-model.trim="aboutInfo.version" maxlength="40" :disabled="aboutSaving || adminProgress.busy" /></div>
+            <div class="form-group"><label for="aboutEmail">联系邮箱</label><input id="aboutEmail" class="form-control" type="email" v-model.trim="aboutInfo.contactEmail" maxlength="160" :disabled="aboutSaving || adminProgress.busy" /></div>
+            <div class="form-group"><label for="aboutWebsite">网站地址</label><input id="aboutWebsite" class="form-control" type="url" v-model.trim="aboutInfo.website" maxlength="350" :disabled="aboutSaving || adminProgress.busy" placeholder="https://example.com" /></div>
+          </div>
+          <div v-if="aboutError" class="about-form-alert error" role="alert">{{aboutError}}</div>
+          <div v-if="aboutSaveResult" class="about-form-alert success" role="status">{{aboutSaveResult}}</div>
+          <div class="about-editor-footer"><button type="submit" class="btn btn-primary" :disabled="aboutSaving || adminProgress.busy">{{aboutSaving?'正在保存到 Gitee…':'保存系统信息'}}</button><small>仅 system 账户可修改 · 编辑后请先保存</small></div>
+        </form>
+      </div>
+    </section>
+
+    <!-- 登录日志 -->
+    <div id="tab-logs" class="tab-content" :class="{active:activeTab==='logs'}">
+      <div class="card">
+        <h2>登录日志（最近1000条）</h2>
+        <div class="log-table-wrap">
+          <table>
+            <thead><tr><th>用户名</th><th>时间</th><th>IP</th><th>User-Agent</th></tr></thead>
+            <tbody id="logTableBody"></tbody>
+          </table>
+        </div>
+        <div id="logEmpty" class="empty-state" style="display:none;">暂无登录记录</div>
+        <button class="btn btn-primary" @click="refreshPageAction('loadLogs', $event.currentTarget)" style="margin-top:12px;">刷新</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 真实操作进度。处理中没有取消/关闭按钮；完成或失败后可关闭。 -->
+  <div v-if="adminProgress.open" class="admin-progress-overlay" role="presentation">
+    <div class="admin-progress-dialog" role="dialog" aria-modal="true" aria-labelledby="adminProgressTitle" aria-describedby="adminProgressDetail" tabindex="-1">
+      <div class="admin-progress-icon" :class="adminProgress.outcome">
+        <span v-if="adminProgress.busy" class="admin-progress-spinner" aria-hidden="true"></span>
+        <span v-else-if="adminProgress.outcome==='success'" aria-hidden="true">✓</span>
+        <span v-else aria-hidden="true">!</span>
+      </div>
+      <h2 id="adminProgressTitle">{{adminProgress.title}}</h2>
+      <p id="adminProgressDetail" class="admin-progress-detail" role="status" aria-live="polite">{{adminProgress.detail}}</p>
+      <div v-if="adminProgress.busy || adminProgress.outcome==='success'" class="admin-progress-track" role="progressbar" :aria-valuenow="adminProgress.indeterminate ? undefined : adminProgress.percent" aria-valuemin="0" aria-valuemax="100" :aria-label="adminProgress.title">
+        <div class="admin-progress-fill" :class="{'is-indeterminate':adminProgress.indeterminate}" :style="adminProgress.indeterminate ? {} : {width:adminProgress.percent+'%'}"></div>
+      </div>
+      <div v-if="adminProgress.busy ? !adminProgress.indeterminate : adminProgress.outcome==='success'" class="admin-progress-percent">{{adminProgress.percent}}%</div>
+      <p v-if="adminProgress.busy" class="admin-progress-warning">正在处理，请勿重复操作或关闭页面</p>
+      <button v-else type="button" class="btn btn-primary admin-progress-close" @click="closeAdminProgress()">关闭</button>
+    </div>
+  </div>
+
+  <!-- 提交状态弹窗 -->
+  <div class="modal-overlay" id="submissionModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>提交状态</h2>
+        <button class="modal-close" @click="invokePageAction('closeSubmissionModal')">×</button>
+      </div>
+      <div class="modal-tabs">
+        <button id="tabSubmittedBtn" class="submission-tab active" @click="invokePageAction('switchSubmissionTab', 'submitted')">已交 (<span id="submittedCount">0</span>)</button>
+        <button id="tabNotSubmittedBtn" class="submission-tab" @click="invokePageAction('switchSubmissionTab', 'notSubmitted')">未交 (<span id="notSubmittedCount">0</span>)</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-toolbar">
+          <button class="btn btn-primary btn-small" @click="invokePageAction('exportSubmissionExcel', $event.currentTarget)">导出 Excel</button>
+          <button class="btn btn-outline btn-small" @click="refreshPageAction('refreshSubmissionData', $event.currentTarget)">刷新</button>
+          <span class="submission-sync-label" id="submissionSyncState" role="status" aria-live="polite">正在获取提交状态…</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead id="submissionThead"></thead>
+            <tbody id="submissionTbody"></tbody>
+          </table>
+        </div>
+        <div id="submissionEmpty" class="empty-state" style="display:none;">暂无数据</div>
+        <div class="submission-last-update" id="submissionUpdatedAt" aria-live="polite"></div>
+      </div>
+    </div>
+  </div>
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

@@ -1,0 +1,47 @@
+/* v1.5 — unified responsive layout, no fixed-width legacy navigation. */
+.admin-tab-switcher { width:100%;min-width:0;max-width:100%; }
+.admin-mobile-tab-select { display:none; }
+.page-admin .tabs-wrap {max-width:100%;width:100%;min-width:0;}
+/* System management uses an accessible native dropdown on small screens, not
+   a horizontally oversized row of seven legacy buttons. */
+@media(max-width:1024px) {
+  .page-admin .admin-tab-switcher {display:block;width:100%;min-width:0;max-width:100%;margin-bottom:18px;}
+  .page-admin .admin-tab-switcher .tabs-wrap {display:none!important;}
+  .page-admin .admin-mobile-tab-select {display:flex;flex-direction:column;gap:7px;width:100%;min-width:0;
+    padding:14px;background:#fff;border:1px solid #e1eaf7;border-radius:15px;
+    color:#4c627e;font-size:12px;font-weight:750;letter-spacing:.03em;box-shadow:0 6px 18px #2539570a;}
+  .page-admin .admin-mobile-tab-select select {display:block;appearance:auto!important;width:100%!important;min-width:0!important;
+    max-width:100%!important;min-height:47px!important;border:1px solid #ccd9ee;border-radius:10px;
+    color:#1b3a66;background-color:#f7faff;padding:10px 12px;font-size:15px;font-weight:700;}
+  .page-admin .page-view > .container {width:100%!important;min-width:0!important;max-width:100%!important;}
+  .page-admin .tab-content {width:100%;max-width:100%;min-width:0;}
+}
+@media(max-width:820px) {
+  .page-admin .page-view :is(.card,.container,.tab-content,.admin-tab-switcher) {min-width:0!important;max-width:100%!important;}
+  .page-admin .page-view :is(.card,.tab-content) > * {max-width:100%;min-width:0;}
+  .page-admin .page-view table {max-width:100%;}
+  .page-admin .page-view :is(.log-table-wrap,.table-wrap,#adminTable) {max-width:100%;min-width:0;}
+  .page-admin .page-view .modal-overlay .modal-card{min-width:0!important;max-width:calc(100vw - 24px)!important;}
+  .page-admin .page-view :is(.row,.form-row) {grid-template-columns:minmax(0,1fr)!important;}
+  .page-view :is(input,textarea,select) {font-size:16px;}
+  .page-view :is(.navbar h1,.card h2) {overflow-wrap:anywhere;}
+}
+@media(min-width:821px) and (max-width:1100px) {
+  .page-admin .page-view .container {min-width:0!important;}
+}
+/* Avoid stacking the old body/page leaving animations on Vue route changes. */
+body.page-leaving {opacity:1!important;visibility:visible!important;transform:none!important;}
+.btn-wait-spinner{display:inline-block;width:16px;height:16px;margin-right:8px;vertical-align:-3px;
+  border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:vue-login-spin .65s linear infinite;}
+@keyframes vue-login-spin{to{transform:rotate(360deg)}}
+@media(prefers-reduced-motion:reduce){.btn-wait-spinner{animation-duration:1.2s}}
+/* Vue table has a real <thead>; the old selector accidentally hid the first
+   tbody record because the pre-Vue table had its header as table>tr. */
+@media(max-width:820px) {
+ .page-admin #adminTable table.vue-admin-table>tbody>tr,
+ .page-admin #adminTable table.vue-admin-table>tbody>tr:first-child {
+   display:block!important; width:100%; min-width:0; padding:8px 12px!important;
+   background:#f8faff; border:1px solid #e1e9f5; border-radius:13px;
+ }
+ .page-admin #adminTable table.vue-admin-table>thead {display:none!important;}
+}

@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="zh-CN" data-page="student">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/route-guard.js?v=1.8"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>学生管理 | 学分申请系统</title>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
+  <link rel="stylesheet" href="/assets/pages/student.css?v=1.8"/>
+  <link rel="stylesheet" href="/feedback.css"/>
+  <link rel="stylesheet" href="/assets/design.css"/>
+  <link rel="stylesheet" href="/assets/mobile-fixes.css?v=1.8"/>
+  <link rel="stylesheet" href="/assets/mobile-v15.css?v=1.8"/>
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js"></script>
+  <script defer src="/custom-dialog.js"></script>
+  <script defer src="/assets/refresh-feedback.js?v=1.8"></script>
+  <script defer src="/assets/app.js?v=1.8"></script>
+</head>
+<body class="page-student">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo">学</span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+  <div class="navbar">
+    <h1>👥 学生管理</h1>
+    <div class="nav-actions"><button class="btn-logout" @click="invokePageAction('logout')">退出登录</button>
+    </div>
+  </div>
+  <div class="container">
+    <div class="card">
+      <h2>📋 学生名单</h2>
+      <div class="toolbar">
+        <button class="btn btn-danger" @click="invokePageAction('deleteSelected')">🗑️ 删除选中</button>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="selectAll" @change="invokePageAction('toggleAll')"> 全选
+        </label>
+        <span style="color:#718096;font-size:14px;">已选 <span id="selectedCount">0</span> 人</span>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th><input type="checkbox" class="checkbox" id="selectAllTable" @change="invokePageAction('toggleAll')"></th><th>姓名</th><th>学号</th></tr></thead>
+          <tbody id="studentTableBody"></tbody>
+        </table>
+      </div>
+      <div id="emptyState" class="empty" style="display:none;">暂无学生数据</div>
+    </div>
+
+    <div class="card">
+      <h2>➕ 手动添加学生</h2>
+      <div class="form-row">
+        <div class="form-group"><label>姓名</label><input class="form-control" id="newName" placeholder="姓名" /></div>
+        <div class="form-group"><label>学号</label><input class="form-control" id="newStudentId" placeholder="学号" /></div>
+      </div>
+      <button class="btn btn-primary" @click="invokePageAction('addStudent')">添加</button>
+    </div>
+
+    <div class="card">
+      <h2>📤 批量导入（xls / xlsx）</h2>
+      <p style="color:#6b7280;font-size:14px;margin-bottom:8px;">文件需包含两列：<strong>姓名</strong> 和 <strong>学号</strong>（第一行为表头），支持无限制数量</p>
+      <div class="file-upload-wrap">
+        <input type="file" id="fileInput" accept=".xls,.xlsx" />
+        <button class="btn btn-success" @click="invokePageAction('importStudents')">导入</button>
+      </div>
+      <div id="importResult" style="margin-top:8px;font-size:14px;color:#10b981;"></div>
+      <div id="importProgress" class="import-progress">
+        <div class="progress-bar"><div class="progress-fill" id="importProgressFill"></div></div>
+        <div class="progress-text" id="importProgressText">0%</div>
+      </div>
+    </div>
+  </div>
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>
