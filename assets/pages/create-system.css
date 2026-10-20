@@ -1,0 +1,35 @@
+
+    :root {
+      --bg: #f0f2f5; --card-bg: #ffffff; --primary: #4f6ef7;
+      --text: #1a1a2e; --border: #e5e7eb; --shadow-lg: 0 10px 25px rgba(0,0,0,0.08);
+      --radius: 16px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+           background:var(--bg); color:var(--text); min-height:100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .container { background:var(--card-bg); padding:40px; border-radius:var(--radius); box-shadow:var(--shadow-lg);
+                 width:100%; max-width:400px; text-align:center; }
+    h2 { margin-bottom:24px; }
+    .form-group { text-align:left; margin-bottom:18px; }
+    label { display:block; font-weight:600; margin-bottom:5px; }
+    input { width:100%; padding:11px 14px; border:2px solid var(--border); border-radius:10px; font-size:0.95rem; }
+    input:focus { border-color:var(--primary); outline:none; }
+    .btn { width:100%; padding:13px; background:var(--primary); color:#fff; border:none; border-radius:28px;
+           font-weight:700; cursor:pointer; font-size:1rem; margin-top:8px; }
+    .btn:hover { background:#3b54d4; }
+    .alert { padding:12px; border-radius:8px; margin-bottom:16px; font-weight:600; }
+    .alert-error { background:#fef2f2; color:#991b1b; }
+    .alert-success { background:#ecfdf5; color:#065f46; }
+    .error-404 h2 { font-size:3rem; }
+    .error-404 p { color:var(--text-secondary); margin:12px 0; }
+
+    /* 统一返回按钮样式 */
+    .btn-back { background:none; border:none; font-size:18px; font-weight:500; color:#2a6df4; cursor:pointer; padding:6px 12px 6px 4px; border-radius:40px; display:inline-flex; align-items:center; gap:6px; transition:background 0.2s; text-decoration:none; }
+    .btn-back:hover { background:rgba(42,109,244,0.08); }
+    .back-row { margin-top:20px; }
+
+    @media (max-width: 480px) {
+      .container { padding:24px 18px; }
+      .btn-back { font-size:16px; }
+    }
+  

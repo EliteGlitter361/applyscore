@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="zh-CN" data-page="detail">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=2.2"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>学分申请详情 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/detail.css?v=3.0"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.4.3"></script>
+</head>
+<body class="page-detail">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt="学分服务中心"></span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+<div class="container">
+<div class="detail-card" id="detailContent" aria-live="polite">
+  <div v-if="detailLoading" class="detail-loader" role="status">正在读取申请详情…</div>
+  <div v-else-if="detailError" class="error-container" role="alert"><h2>加载失败</h2><p>{{detailError}}</p><button type="button" class="btn btn-primary" @click="detailApi.reload()">重新加载</button><a href="/index.html" class="btn btn-outline">返回首页</a></div>
+  <template v-else-if="detailApp">
+    <header class="detail-header"><h2>{{detailCanEdit ? '修改申请' : (detailApp.versionName || '未命名活动')}}</h2><div class="sub">{{detailApp.name || '未知'}} · 学号：{{detailApp.packageName || ''}}</div></header>
+    <div class="detail-meta"><span v-if="!detailCanEdit" class="tag time">{{detailApp.publisher || ''}}</span><span class="tag" :class="detailApp.status==='needs_fix' ? 'needs-fix' : detailApp.status==='approved' ? 'approved':'pending'">{{detailApp.status==='needs_fix'?'需要修改':detailApp.status==='approved'?'已通过':'待审核'}}</span></div>
+    <section v-if="detailApp.rejectReason" class="detail-section reject-reason"><h3>驳回原因</h3><div class="value">{{detailApp.rejectReason}}</div></section>
+    <template v-if="!detailCanEdit">
+      <section v-if="detailApp.participants" class="detail-section"><h3>活动参与名单</h3><div class="value">{{detailApp.participants}}</div></section>
+      <section v-if="detailApp.screenshots?.length" class="detail-section"><h3>证明截图</h3><div class="screenshots"><div v-for="(file,i) in detailApp.screenshots" :key="i" class="img-wrapper"><img v-if="!detailImageFailed['original-'+i]" :src="detailApi.imageUrl(file)" loading="lazy" alt="证明图片" @click="detailApi.openImage(detailApi.imageUrl(file))" @error="detailApi.imageFailed('original-'+i)"/><div v-else class="placeholder"><span>图片加载失败</span><button type="button" @click="detailApi.retryImage('original-'+i)">重试</button></div></div></div></section>
+    </template>
+    <form v-else class="edit-form" id="editForm" @submit.prevent="detailApi.submit()" :aria-busy="detailBusy">
+      <div class="form-group"><label for="editVersionName">活动名称 <span class="required">*</span></label><input id="editVersionName" type="text" class="form-control" v-model.trim="detailForm.versionName" required maxlength="200" placeholder="请输入活动名称" :disabled="detailBusy" /></div>
+      <div class="form-group"><label for="editPublisher">活动时间 <span class="required">*</span></label><input id="editPublisher" type="datetime-local" class="form-control" v-model="detailForm.publisher" required :disabled="detailBusy" /></div>
+      <div class="form-group"><label for="editParticipants">活动参与名单</label><textarea id="editParticipants" class="form-control" rows="3" placeholder="例如：张三，李四，王五" v-model="detailForm.participants" :disabled="detailBusy"></textarea><div class="form-hint">如果是全班参加则填写“全班”</div></div>
+      <div class="form-group"><label for="editScreenshots">证明截图</label>
+        <div v-if="detailApp.screenshots?.length" class="screenshots"><div class="img-wrapper" v-for="(file,i) in detailApp.screenshots" :key="i"><img v-if="!detailImageFailed['edit-'+i]" :src="detailApi.imageUrl(file)" alt="已有截图" @click="detailApi.openImage(detailApi.imageUrl(file))" @error="detailApi.imageFailed('edit-'+i)"/><div v-else class="placeholder"><span>图片加载失败</span><button type="button" @click="detailApi.retryImage('edit-'+i)">重试</button></div></div></div>
+        <span v-else class="form-hint">暂无截图</span>
+        <input type="file" id="editScreenshots" accept="image/*" multiple class="form-control detail-file-input" @change="detailApi.pickFiles($event)" :disabled="detailBusy"/>
+        <div class="edit-preview"><div class="preview-item" v-for="(item,i) in detailPreviews" :key="item.id"><img :src="item.url" alt="新上传截图" @click="detailApi.openImage(item.url)"/><button type="button" class="remove-btn" @click="detailApi.removePreview(i)" :disabled="detailBusy" aria-label="移除新截图">×</button></div></div>
+        <div class="form-hint">不上传新图则保留原截图；最多添加 2 张新截图</div>
+      </div>
+      <div class="action-bar"><button id="btnSubmitEdit" type="submit" class="btn btn-primary" :disabled="detailBusy">{{detailEditing?'正在提交…':'提交修改'}}</button><button id="btnCancelApp" type="button" class="btn btn-danger" :disabled="detailBusy" @click="detailApi.cancel()">取消申请</button></div>
+    </form>
+  </template>
+  <div v-if="detailPreviewSrc" class="image-modal" role="dialog" aria-label="截图预览" @click.self="detailApi.closeImage()"><img :src="detailPreviewSrc" alt="放大截图"/><button type="button" class="detail-image-close" @click="detailApi.closeImage()" aria-label="关闭图片预览">×</button></div>
+  <div v-if="detailCancelling" class="cancel-progress-backdrop" role="alertdialog" aria-modal="true" aria-labelledby="cancelProgressTitle" aria-describedby="cancelProgressHint" @keydown.esc.prevent.stop><div class="cancel-progress-card" tabindex="-1"><span class="cancel-progress-spinner" aria-hidden="true"></span><h2 id="cancelProgressTitle">正在取消申请...</h2><p id="cancelProgressHint">请勿关闭或返回页面，正在等待服务器确认取消结果。</p></div></div>
+</div>
+  </div>
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="zh-CN" data-page="settings">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=2.2"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>设置 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/settings.css?v=3.4.3"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.4.3"></script>
+</head>
+<body class="page-settings">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt=""></span><span>正在载入设置…</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+    <div class="software-settings container">
+      <div class="settings-heading"><div><span class="settings-eyebrow">PREFERENCES</span><h1>设置</h1><p>软件外观、音乐播放与本地缓存偏好。设置仅影响当前浏览器。</p></div><img src="/assets/icons/罗盘设置图标.png" alt="设置图标"></div>
+      <section class="settings-pane" aria-labelledby="settings-appearance-title">
+        <div class="settings-pane-heading"><span class="settings-pane-icon settings-icon-art"><img src="/assets/icons/罗盘设置图标.png" alt=""></span><div><h2 id="settings-appearance-title">外观与显示</h2><p>两种主题在所有页面保持一致，切换不会改变布局。</p></div></div>
+        <div class="settings-line settings-line-wrap"><div><strong>界面主题</strong><small>当前使用：{{settingsTheme==='dark'?'深色模式':'浅色模式'}}</small></div>
+          <div class="settings-theme-options" role="group" aria-label="界面主题">
+            <button type="button" :class="{'selected':settingsTheme==='light'}" :aria-pressed="settingsTheme==='light'" @click="settingsThemeSet('light')"><span aria-hidden="true">☀</span> 浅色</button>
+            <button type="button" :class="{'selected':settingsTheme==='dark'}" :aria-pressed="settingsTheme==='dark'" @click="settingsThemeSet('dark')"><span aria-hidden="true">☾</span> 深色</button>
+          </div>
+        </div>
+        <p class="settings-footnote">动画尊重设备的“减少动态效果”偏好{{settingsReducedMotion?'（当前已启用）':''}}。</p>
+      </section>
+      <section class="settings-pane" aria-labelledby="settings-music-title">
+        <div class="settings-pane-heading"><span class="settings-pane-icon settings-icon-art"><img src="/assets/icons/音乐盒.webp" alt=""></span><div><h2 id="settings-music-title">NBS 网络音乐盒</h2><p>管理自动播放、灵动岛和播放模式。</p></div></div>
+        <div class="settings-line"><div><strong>启用音乐盒</strong><small>关闭后停止音乐播放并隐藏悬浮窗</small></div><label class="settings-switch"><input type="checkbox" :checked="settingsMusic.enabled" @change="settingsMusicSet('enabled',$event.target.checked)" aria-label="启用音乐盒"><span></span></label></div>
+        <div class="settings-line" :class="{'settings-muted':!settingsMusic.enabled}"><div><strong>进入系统自动播放</strong><small>浏览器限制时将在首次点击后尝试播放</small></div><label class="settings-switch"><input type="checkbox" :checked="settingsMusic.autoPlay" :disabled="!settingsMusic.enabled" @change="settingsMusicSet('autoPlay',$event.target.checked)" aria-label="进入系统自动播放"><span></span></label></div>
+        <div class="settings-line" :class="{'settings-muted':!settingsMusic.enabled}"><div><strong>显示灵动岛／悬浮球</strong><small>在不同页面间保留播放器窗口</small></div><label class="settings-switch"><input type="checkbox" :checked="settingsMusic.showIsland" :disabled="!settingsMusic.enabled" @change="settingsMusicSet('showIsland',$event.target.checked)" aria-label="显示灵动岛"><span></span></label></div>
+        <div class="settings-line settings-line-wrap" :class="{'settings-muted':!settingsMusic.enabled}"><div><strong>播放模式</strong><small>保留所选模式供下次进入系统使用</small></div><select class="settings-select" :value="settingsMusic.mode" :disabled="!settingsMusic.enabled" @change="settingsMusicSet('mode',$event.target.value)" aria-label="播放模式"><option value="sequence">顺序播放</option><option value="shuffle">随机播放</option><option value="repeat-one">单曲循环</option></select></div>
+        <div class="settings-line settings-line-wrap"><div><strong>音乐缓存</strong><small>后台预取 MP3；实际缓存容量由浏览器决定{{settingsCacheCount===null?'':' · 已缓存 '+settingsCacheCount+' 首'}}</small></div><button type="button" class="settings-secondary" @click="settingsClearMusicCache" :disabled="settingsBusy">{{settingsBusy?'正在清理…':'清理本机缓存'}}</button></div>
+        <div class="settings-line settings-line-wrap"><div><strong>音乐播放器与曲目</strong><small>打开播放器可查看当前歌曲、进度与列表</small></div><button type="button" class="settings-primary" @click="settingsOpenMusic">打开音乐播放器</button></div>
+        <div v-if="isSystem" class="settings-line settings-line-wrap"><div><strong>曲库管理</strong><small>仅 system 可导入或删除 MP3</small></div><a href="/music.html" class="settings-secondary">进入曲库管理 →</a></div>
+      </section>
+      <section v-if="isSystem" class="settings-pane settings-about" id="about-system" aria-labelledby="settings-about-title">
+        <div class="settings-pane-heading"><span class="settings-pane-icon">ⓘ</span><div><h2 id="settings-about-title">关于页面信息</h2><p>仅 system 可编辑，保存至 Gitee；公开展示在「关于」页面。</p></div></div>
+        <div v-if="aboutStatus==='loading'" class="settings-info-state" role="status">正在读取系统介绍…</div>
+        <div v-else-if="aboutStatus==='error'" class="settings-info-state" role="alert">{{aboutError}} <button type="button" class="settings-secondary" @click="loadAboutInfo">重新加载</button></div>
+        <form v-else class="settings-about-form" @submit.prevent="saveAboutInfo">
+          <label>标题 *<input v-model.trim="aboutInfo.title" required maxlength="70" :disabled="aboutSaving" /></label>
+          <label>副标题<input v-model.trim="aboutInfo.subtitle" maxlength="120" :disabled="aboutSaving" /></label>
+          <label>系统简介<textarea v-model="aboutInfo.description" maxlength="3000" rows="5" :disabled="aboutSaving"></textarea></label>
+          <div class="settings-form-grid"><label>维护单位<input v-model.trim="aboutInfo.organization" maxlength="120" :disabled="aboutSaving" /></label><label>版本号<input v-model.trim="aboutInfo.version" maxlength="40" :disabled="aboutSaving" /></label></div>
+          <div class="settings-form-grid"><label>联系邮箱<input type="email" v-model.trim="aboutInfo.contactEmail" maxlength="160" :disabled="aboutSaving" /></label><label>网站地址<input type="url" v-model.trim="aboutInfo.website" maxlength="350" :disabled="aboutSaving" placeholder="https://example.com" /></label></div>
+          <p v-if="aboutError" class="settings-info-error" role="alert">{{aboutError}}</p><p v-if="aboutSaveResult" class="settings-info-success" role="status">{{aboutSaveResult}}</p>
+          <div class="settings-about-actions"><button class="settings-primary" type="submit" :disabled="aboutSaving">{{aboutSaving?'正在保存…':'保存关于信息'}}</button><a class="settings-secondary" href="/about.html?view=admin">预览关于页 ↗</a></div>
+        </form>
+      </section>
+      <div class="settings-feedback" v-if="settingsNotice" role="status">{{settingsNotice}}</div>
+      <p class="settings-bottom-note">与审核权限、学生管理、上传限制等相关的业务选项，仍在对应管理页面配置。这里仅管理软件使用偏好。</p>
+    </div>
+  </template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

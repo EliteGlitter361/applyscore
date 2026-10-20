@@ -1,0 +1,156 @@
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', 'PingFang SC', sans-serif; background: #f0f4ff; min-height:100vh; padding:20px; }
+    .navbar { max-width:900px; margin:0 auto 24px; background:rgba(255,255,255,0.85); backdrop-filter:blur(12px); border-radius:40px; padding:12px 28px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 4px 20px rgba(0,0,0,0.04); border:1px solid rgba(255,255,255,0.4); }
+    .navbar h1 { font-size:22px; font-weight:700; color:#0b1e3a; }
+    .navbar .actions { display:flex; gap:12px; flex-wrap:wrap; }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 20px;
+      border-radius: 40px;
+      font-weight: 600;
+      font-family: inherit;
+      font-size: 14px;
+      line-height: 1;
+      border: 2px solid transparent;
+      cursor: pointer;
+      text-decoration: none;
+      transition: background 0.2s, border-color 0.2s, color 0.2s, transform 0.08s;
+    }
+    .btn-outline { background:transparent; color:#2a6df4; border-color:#2a6df4; }
+    .btn-outline:hover { background:#2a6df4; color:#fff; }
+    .btn-primary { background:linear-gradient(135deg,#2a6df4,#1a4db5); color:#fff; box-shadow:0 4px 14px rgba(42,109,244,0.25); }
+    .btn-primary:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(42,109,244,0.35); }
+
+    .container { max-width:900px; margin:0 auto; }
+    .msg-list { display:flex; flex-direction:column; gap:18px; }
+    .msg-item {
+      background: rgba(255,255,255,0.85);
+      backdrop-filter: blur(8px);
+      border-radius: 28px;
+      padding: 22px 26px;
+      border: 1px solid rgba(255,255,255,0.5);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.04);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .msg-item:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+    .msg-item .msg-main { flex: 1; min-width: 200px; }
+    .msg-item .msg-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #0b1e3a;
+      margin-bottom: 6px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .msg-item .msg-preview {
+      color: #4a5568;
+      font-size: 14px;
+      line-height: 1.5;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+    .msg-item .msg-meta { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+    .msg-item .msg-time { font-size: 13px; color: #a0aec0; white-space: nowrap; }
+    .msg-item .msg-arrow { display:flex; align-items:center; color:#a0aec0; }
+    .msg-item .msg-arrow svg { width:20px; height:20px; }
+
+    .unread-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ef4444;
+      flex-shrink: 0;
+      box-shadow: 0 0 0 3px rgba(239,68,68,0.2);
+      animation: dotPulse 1.5s ease infinite;
+    }
+    @keyframes dotPulse {
+      0%, 100% { box-shadow: 0 0 0 3px rgba(239,68,68,0.2); }
+      50% { box-shadow: 0 0 0 6px rgba(239,68,68,0.05); }
+    }
+
+    .msg-type-tag { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .msg-type-tag.approved { background:#d1fae5; color:#065f46; }
+    .msg-type-tag.rejected { background:#fee2e2; color:#991b1b; }
+    .msg-type-tag.needs_fix { background:#fed7aa; color:#9a3412; }
+    .msg-type-tag.system { background:#e5e7eb; color:#374151; }
+
+    .msg-item.read .msg-title { color: #6b7a8f; font-weight: 600; }
+    .msg-item.read .msg-preview { color: #94a3b8; }
+
+    .empty-state { text-align:center; padding:80px 20px; color:#718096; font-size:18px; }
+
+    .msg-detail-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.5); z-index: 15000; display: none;
+      align-items: center; justify-content: center; padding: 20px;
+      backdrop-filter: blur(4px);
+    }
+    .msg-detail-overlay.show { display: flex; }
+    .msg-detail-card {
+      background: #fff; border-radius: 24px; max-width: 560px; width: 100%;
+      max-height: 85vh; overflow-y: auto; padding: 28px 26px 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: detailModalIn 0.3s ease;
+    }
+    @keyframes detailModalIn {
+      from { opacity: 0; transform: scale(0.95) translateY(20px); }
+      to { opacity: 1; transform: scale(1) translateY(0); }
+    }
+    .msg-detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 16px; gap: 12px; }
+    .msg-detail-header h2 { font-size: 20px; font-weight: 700; color: #0b1e3a; line-height: 1.3; flex: 1; }
+    .msg-detail-close {
+      background: none; border: none; font-size: 24px; cursor: pointer;
+      color: #6b7a8f; padding: 0 4px; line-height: 1; flex-shrink: 0;
+      font-family: inherit;
+    }
+    .msg-detail-close:hover { color: #ef4444; }
+    .msg-detail-meta {
+      display: flex; align-items: center; gap: 12px;
+      margin-bottom: 20px; padding-bottom: 16px;
+      border-bottom: 1px solid #e2e8f0; flex-wrap: wrap;
+    }
+    .msg-detail-time { font-size: 13px; color: #a0aec0; }
+    .msg-detail-content { font-size: 15px; color: #1a202c; line-height: 1.8; white-space: pre-wrap; word-break: break-word; }
+
+    @media (max-width: 768px) {
+      body { padding:12px; }
+      .navbar { flex-direction:column; align-items:stretch; gap:10px; padding:16px; border-radius:24px; }
+      .navbar h1 { font-size:18px; justify-content:center; }
+      .navbar .actions { justify-content:center; }
+      .msg-item { padding: 16px 18px; border-radius: 20px; }
+      .msg-item .msg-title { font-size: 16px; }
+      .msg-detail-card { padding: 20px 18px; border-radius: 18px; }
+      .msg-detail-header h2 { font-size: 18px; }
+    }
+  
+/* v2.9 Vue 交互控件与主题继承：不改变原有几何尺寸 */
+.page-messages .msg-item{width:100%;font:inherit;text-align:left;color:var(--ui-text,#172c46);cursor:pointer}
+.page-messages .msg-main,.page-messages .msg-title,.page-messages .msg-preview{display:block}
+.page-messages .msg-detail-overlay.show{display:flex}
+[data-theme="dark"] .page-messages .msg-detail-card{background:var(--ui-card,#1d2b3c);color:var(--ui-text,#f4f6ff)}
+[data-theme="dark"] .page-messages .msg-detail-header h2,[data-theme="dark"] .page-messages .msg-detail-content{color:inherit}
+
+/* Vue 消息列表在深浅色之间只更换色彩，不改变布局 */
+.page-messages .page-view .msg-item .msg-title,
+.page-messages .page-view .msg-detail-header h2,
+.page-messages .page-view .msg-detail-content{color:var(--ui-text)!important}
+.page-messages .page-view .msg-item .msg-preview,
+.page-messages .page-view .msg-detail-time,
+.page-messages .page-view .msg-item .msg-time{color:var(--ui-muted)!important}
+.page-messages .page-view .msg-detail-card{background:var(--ui-card)!important;color:var(--ui-text)!important}
+.page-messages .page-view .msg-item:focus-visible{outline:2px solid var(--ui-primary);outline-offset:3px}
+.page-messages .page-view .msg-detail-close{min-width:36px;min-height:36px}
