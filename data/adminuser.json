@@ -12,7 +12,7 @@
     "username": "xjx",
     "password": "35fe3c97",
     "role": "admin",
-    "auditPermission": 0,
+    "auditPermission": 1,
     "canBan": false
   }
 ]
