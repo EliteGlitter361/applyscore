@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN" data-page="upload">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.4.5"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>提交学分申请 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/upload.css?v=3.4"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.4.6"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.4.5"></script>
+</head>
+<body class="page-upload">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt="学分服务中心"></span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+  <div class="container">
+<div class="back-row">
+<h2>填写申请信息</h2>
+    </div>
+    <form id="applyForm" enctype="multipart/form-data" @submit.prevent="submitApplication">
+      <div class="form-row">
+        <div class="form-group"><label>申请人姓名 <span class="required">*</span></label><input class="form-control" id="name" v-model="applicationName" required readonly /></div>
+        <div class="form-group"><label>申请人学号 <span class="required">*</span></label><input class="form-control" id="studentId" v-model="applicationStudentId" required readonly /></div>
+      </div>
+      <div class="form-group"><label>活动名称 <span class="required">*</span></label><input class="form-control" id="activity" v-model.trim="applicationActivity" :disabled="applicationSubmitting" required /></div>
+      <div class="form-group">
+        <label>活动参与名单（xxx，xxx，xxx...）</label>
+        <textarea class="form-control" id="participants" v-model.trim="applicationParticipants" :disabled="applicationSubmitting" rows="3" placeholder="例如：张三，李四，王五"></textarea>
+        <div class="form-note">如果是全班参加则填写"全班"</div>
+      </div>
+      <div class="form-group"><label>活动地点 <span class="required">*</span></label><input class="form-control" id="location" v-model.trim="applicationLocation" :disabled="applicationSubmitting" required /></div>
+      <div class="form-group">
+        <label>活动时间 <span class="required">*</span></label>
+        <div class="flatpickr-wrapper">
+          <input class="form-control" id="time" v-model="applicationTime" type="datetime-local" :disabled="applicationSubmitting" required />
+          <span class="date-icon">
+            <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+              <line x1="16" y1="2" x2="16" y2="6"/>
+              <line x1="8" y1="2" x2="8" y2="6"/>
+              <line x1="3" y1="10" x2="21" y2="10"/>
+            </svg>
+          </span>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>上传活动证明（至少1张，最多2张）<span class="required">*</span></label>
+        <div class="upload-wrapper">
+          <div class="upload-control"><input type="file" id="imageUpload" accept="image/*" multiple :disabled="applicationSubmitting || applicationProcessingImages || applicationImages.length>=2" @change="selectApplicationImages($event)" /><span class="upload-badge" id="fileCount">{{applicationImages.length}} / 2</span></div>
+          <div class="upload-hint">支持 JPG / PNG / WebP，自动压缩至 700px 宽</div>
+          <div class="preview-container" id="preview"><div v-for="(img, idx) in applicationImages" :key="img.key" class="preview-item">
+            <button type="button" class="preview-image-button" @click="applicationPreviewSrc=img.url" :aria-label="'查看证明图片 '+(idx+1)"><img :src="img.url" :alt="'证明图片 '+(idx+1)" /></button>
+            <button type="button" class="remove-btn" :disabled="applicationSubmitting" @click="removeApplicationImage(idx)" :aria-label="'移除证明图片 '+(idx+1)">×</button>
+          </div><span v-if="applicationProcessingImages" class="image-processing" role="status">正在处理图片…</span></div>
+        </div>
+        <div class="form-validation-hint">请至少上传一张证明图片</div>
+      </div>
+      <button type="submit" class="btn-submit" :disabled="applicationSubmitting || applicationProcessingImages">{{applicationSubmitting ? '提交中…' : applicationProcessingImages ? '正在处理图片…' : '提交申请'}}</button>
+
+    </form>
+  </div>
+  <div v-if="applicationPreviewSrc" class="image-modal" role="dialog" aria-modal="true" aria-label="查看证明图片" @click.self="applicationPreviewSrc=''" @keydown.esc="applicationPreviewSrc=''" tabindex="-1"><img :src="applicationPreviewSrc" alt="图片放大预览" /><button type="button" class="image-modal-close" @click="applicationPreviewSrc=''" aria-label="关闭图片预览">×</button></div>
+  <div v-if="uploadModalOpen" class="application-progress-overlay" role="presentation" @click.stop>
+    <div class="application-progress-dialog" role="dialog" aria-modal="true" aria-labelledby="applicationProgressHeading" aria-describedby="applicationProgressBody" tabindex="-1" @keydown.esc.prevent>
+      <div class="application-progress-icon" :class="uploadModalState">
+        <span v-if="uploadModalState==='error'" class="application-error-icon">!</span>
+        <span v-else-if="uploadModalState==='success'" class="application-success-icon">✓</span>
+        <span v-else class="application-progress-spinner"></span>
+      </div>
+      <h2 id="applicationProgressHeading">{{uploadModalState==='uploading'?'正在上传申请材料…':uploadModalState==='saving'?'正在提交申请…':uploadModalState==='success'?'申请已提交':'提交未成功'}}</h2>
+      <p id="applicationProgressBody" class="application-progress-detail">{{uploadModalState==='uploading'?'正在上传活动证明，请勿关闭或返回页面。':uploadModalState==='saving'?'材料已上传，正在等待服务器保存确认。':uploadModalState==='success'?'提交成功，正在前往学分总览…':(uploadModalError || '请检查网络后重试。')}}</p>
+      <div v-if="uploadModalState==='uploading' || uploadModalState==='saving'" class="application-progress-track" role="progressbar" :aria-valuenow="uploadModalProgress" aria-valuemin="0" aria-valuemax="100" aria-label="文件上传进度">
+        <div class="application-progress-track-fill" :style="{width:uploadModalProgress+'%'}"></div>
+      </div>
+      <div v-if="uploadModalState==='uploading'" class="application-progress-number">文件上传 {{uploadModalProgress}}%</div>
+      <div v-else-if="uploadModalState==='saving'" class="application-progress-number">上传完成 · 等待服务器响应</div>
+      <div v-if="uploadModalState==='error'" class="application-progress-actions"><button type="button" @click="dismissUploadError()">关闭并返回表单</button></div>
+    </div>
+  </div>
+
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

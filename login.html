@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="zh-CN" data-page="login">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.4.5"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>管理员登录 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/login.css?v=3.4.3"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.4.6"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script>
+  <script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.5.2"></script>
+</head>
+<body class="page-login">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt="学分服务中心"></span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+  <div class="login-card">
+    <img class="auth-role-icon" src="/assets/icons/后台管理.gif" alt="" loading="eager"><h2>管理员登录</h2>
+    <div class="error" id="errorBox" v-if="loginError" role="alert">{{loginError}}</div>
+    <form id="loginForm" @submit.prevent="submitAdminLogin">
+      <div class="form-group">
+        <label>用户名</label>
+        <input type="text" id="username" v-model.trim="username" required autocomplete="username">
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input type="password" id="password" v-model="password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn" id="loginBtn" :disabled="loginPending"><span v-if="loginPending" class="btn-wait-spinner"></span>{{loginPending ? "登录中…" : "登录"}}</button>
+    </form>
+    <div class="setup-state" aria-live="polite">
+      <div class="setup-checking" v-if="systemStatus === 'checking'">
+        <span class="btn-wait-spinner" aria-hidden="true"></span>正在确认系统初始化状态…
+      </div>
+      <div class="create-system" id="createSystemBox" v-else-if="systemStatus === 'uninitialized'">
+        <strong>系统尚未初始化</strong>
+        <p>首次部署请先创建 system 管理账户，然后登录管理后台。</p>
+        <a class="setup-link" href="/create-system.html">创建 system 账户 <span aria-hidden="true">→</span></a>
+      </div>
+      <div class="setup-status-error" role="alert" v-else-if="systemStatus === 'error'">
+        <p>{{ systemStatusError || "无法确认系统初始化状态，请检查网络或后端配置。" }}</p>
+        <button type="button" @click="checkSystemStatus" :disabled="loginPending">重新检查</button>
+      </div>
+    </div>
+    <div class="back-row">
+      <a href="/" class="btn-back">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+        返回首页
+      </a>
+    </div>
+  </div>
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

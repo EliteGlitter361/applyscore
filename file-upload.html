@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="zh-CN" data-page="file-upload">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.4.5"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>文件上传 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/file-upload.css?v=3.4"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.4.6"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.4.5"></script>
+</head>
+<body class="page-file-upload">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt="学分服务中心"></span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+  <div id="toast" class="toast"></div>
+  <div class="container">
+<div class="back-row">
+<h2>上传文件</h2>
+    </div>
+
+    <div class="countdown-box" id="countdownBox" v-if="fileUploadCountdown" :class="{urgent:fileUploadCountdownUrgent}">
+      <div class="label">距离上传截止还剩</div>
+      <div class="time" id="countdownTime" role="timer">{{fileUploadCountdown}}</div>
+    </div>
+
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label>姓名 <span class="required">*</span></label>
+          <input class="form-control" id="name" v-model="fileUploadPersonName" required />
+        </div>
+        <div class="form-group">
+          <label>学号 <span class="required">*</span></label>
+          <input class="form-control" id="studentId" v-model="fileUploadPersonId" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>选择文件 <span class="required">*</span></label>
+        <div class="upload-wrapper">
+          <div class="upload-control">
+            <input type="file" id="fileInput" :multiple="fileUploadAllowedMultiple" :disabled="fileUploadBusy" />
+            <span class="upload-badge" id="fileCount">{{fileUploadSelections.length}} 个文件</span>
+          </div>
+          <div class="upload-hint" id="uploadHint">{{fileUploadHint}}</div>
+          <div class="file-list" id="fileList"><div v-for="(file,idx) in fileUploadSelections" :key="file.key" class="file-item"><span class="file-info">{{file.name}}（{{file.sizeKB}} KB）</span><button type="button" class="remove-file" :aria-label="'移除 '+file.name" @click="invokePageAction('removeSelectedFile',idx)">×</button></div></div>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit" :disabled="fileUploadBusy || fileUploadExpired">{{fileUploadExpired?'上传已截止':fileUploadBusy?'正在上传…':'上传文件'}}</button>
+    </form>
+  </div>
+
+  <div class="upload-modal-overlay" id="uploadModalOverlay" v-if="fileUploadModalOpen">
+    <div class="upload-modal-card">
+      <h3>
+        <span class="upload-modal-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </span>
+        正在上传...
+      </h3>
+      <div class="upload-files-list" id="uploadFilesList">
+        <div v-for="(file,index) in fileUploadModalFiles" :key="index" class="file-row"><span class="fname">{{file.name}}</span><span class="fsize">{{file.sizeKB}} KB</span></div>
+      </div>
+      <div class="upload-progress-bar">
+        <div class="upload-progress-fill" id="uploadProgressFill" :style="{width:fileUploadModalProgress+'%'}"></div>
+      </div>
+      <div class="upload-progress-text" id="uploadProgressText" role="status">{{fileUploadModalWaiting?'服务器处理中…':fileUploadModalProgress+'%'}}</div>
+      <button type="button" class="upload-cancel-btn" id="uploadCancelBtn" :disabled="fileUploadModalWaiting" @click="invokePageAction('cancelUpload')">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+        取消上传
+      </button>
+    </div>
+  </div>
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

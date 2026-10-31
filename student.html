@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN" data-page="student">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.4.5"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>学生管理 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/student.css?v=2.9"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.4.6"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.4.5"></script>
+</head>
+<body class="page-student">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt="学分服务中心"></span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+<div class="navbar"><h1>学生管理</h1><div class="nav-actions"><button class="btn-logout" type="button" @click="invokePageAction('logout')">退出登录</button></div></div>
+<div class="container">
+  <section class="card"><h2>学生名单</h2>
+    <div class="toolbar">
+      <button class="btn btn-danger" type="button" :disabled="studentsBusy || !selectedStudentsCount" @click="invokePageAction('deleteSelected')">删除选中（{{selectedStudentsCount}}）</button>
+      <label class="student-checkall"><input type="checkbox" :checked="studentsAllSelected" :disabled="!studentsRows.length || studentsBusy" @change="selectAllStudents($event.target.checked)"> 全选</label>
+      <span class="student-selection-hint">已选 {{selectedStudentsCount}} 人</span>
+      <button type="button" class="btn btn-outline" :disabled="studentsLoading || studentsBusy" @click="invokePageAction('loadStudents')">{{studentsLoading?'正在刷新…':'刷新'}}</button>
+    </div>
+    <div v-if="studentsLoading ? !studentsRows.length : false" class="empty" role="status">正在加载学生名单…</div>
+    <div v-else-if="studentsError" class="empty" role="alert">{{studentsError}}</div>
+    <div v-else-if="!studentsRows.length" class="empty">暂无学生数据</div>
+    <div v-else class="table-wrap"><table><thead><tr><th><input type="checkbox" class="checkbox" aria-label="全选学生" :checked="studentsAllSelected" :disabled="studentsBusy" @change="selectAllStudents($event.target.checked)"></th><th>姓名</th><th>学号</th></tr></thead>
+      <tbody><tr v-for="s in studentsRows" :key="String(s.studentId)"><td><input type="checkbox" class="checkbox student-checkbox" :aria-label="'选择 '+s.name" :checked="!!selectedStudentIds[String(s.studentId)]" :disabled="studentsBusy" @change="toggleStudentSelected(s.studentId,$event.target.checked)"></td><td>{{s.name}}</td><td>{{s.studentId}}</td></tr></tbody>
+    </table></div>
+  </section>
+  <section class="card"><h2>手动添加学生</h2><form @submit.prevent="invokePageAction('addStudent')">
+    <div class="form-row"><div class="form-group"><label for="newName">姓名</label><input class="form-control" id="newName" v-model.trim="studentNewName" required autocomplete="off" placeholder="姓名"></div>
+    <div class="form-group"><label for="newStudentId">学号</label><input class="form-control" id="newStudentId" v-model.trim="studentNewId" required autocomplete="off" placeholder="学号"></div></div>
+    <button type="submit" class="btn btn-primary" :disabled="studentsBusy">{{studentsBusy?'正在处理…':'添加学生'}}</button>
+  </form></section>
+  <section class="card"><h2>批量导入（xls / xlsx）</h2><p class="student-import-hint">文件需包含两列：<strong>姓名</strong> 和 <strong>学号</strong>（第一行为表头）</p>
+    <div class="file-upload-wrap"><input type="file" id="fileInput" accept=".xls,.xlsx" :disabled="studentsBusy"><button type="button" class="btn btn-success" :disabled="studentsBusy" @click="invokePageAction('importStudents')">{{studentsBusy?'导入中…':'导入'}}</button></div>
+    <p v-if="studentImportResult" class="student-import-result" role="status">{{studentImportResult}}</p>
+    <div v-if="studentImportVisible" class="import-progress" role="progressbar" :aria-valuenow="studentImportProgress" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar"><div class="progress-fill" :style="{width:studentImportProgress+'%'}"></div></div><div class="progress-text">{{studentImportProgress}}%</div></div>
+  </section>
+</div>
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

@@ -1,0 +1,54 @@
+/* Software preferences are Vue controlled. CSS is only geometry and the shared palette. */
+.software-settings{max-width:910px;margin:0 auto;width:100%;padding:2px 0 36px;color:var(--ui-text)}
+.settings-heading{display:flex;align-items:center;justify-content:space-between;gap:25px;padding:6px 0 22px}
+.settings-heading h1{font-size:clamp(27px,3.5vw,36px);line-height:1.2;margin:9px 0;color:var(--ui-text)}
+.settings-heading p{line-height:1.7;font-size:14px;color:var(--ui-muted);margin:0}
+.settings-heading>img{width:72px;height:72px;object-fit:contain;background:var(--ui-soft);padding:13px;border-radius:20px;border:1px solid var(--ui-stroke);flex:none}
+.settings-eyebrow{font-size:11px;font-weight:800;letter-spacing:.14em;color:var(--ui-primary)}
+.settings-pane{border:1px solid var(--ui-stroke);background:var(--ui-card);border-radius:20px;padding:clamp(18px,3.5vw,27px);box-shadow:var(--shadow);margin-bottom:20px;color:var(--ui-text)}
+.settings-pane-heading{display:flex;align-items:center;gap:13px;margin-bottom:8px}
+.settings-pane-heading h2{margin:0 0 4px;font-size:19px;line-height:1.4;color:var(--ui-text)}
+.settings-pane-heading p{margin:0;color:var(--ui-muted);font-size:13px;line-height:1.6}
+.settings-pane-icon{width:44px;height:44px;display:grid;place-items:center;flex:none;background:var(--ui-soft);border:1px solid var(--ui-stroke);border-radius:13px;font-size:24px;color:var(--ui-primary)}
+.settings-icon-art img{width:29px;height:29px;object-fit:contain}
+.settings-line{min-height:80px;padding:18px 0;display:flex;align-items:center;justify-content:space-between;gap:22px;border-bottom:1px solid var(--ui-stroke)}
+.settings-line:last-child{border-bottom:0}
+.settings-line>div:first-child{min-width:0;max-width:600px}
+.settings-line strong{display:block;color:var(--ui-text);font-size:14px;font-weight:750;line-height:1.5}
+.settings-line small{display:block;color:var(--ui-muted);font-size:12px;line-height:1.7;margin-top:4px}
+.settings-line .settings-secondary,.settings-line .settings-primary{flex:none}
+.settings-muted{opacity:.57}
+.settings-theme-options{display:inline-flex;align-items:center;gap:5px;padding:4px;background:var(--ui-soft);border:1px solid var(--ui-stroke);border-radius:13px}
+.settings-theme-options button{min-height:39px;min-width:90px;padding:8px 14px;border-radius:9px;border:1px solid transparent;background:transparent;color:var(--ui-muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .18s,color .18s,border-color .18s}
+.settings-theme-options button.selected{background:var(--ui-highlight);color:var(--ui-highlight-text);border-color:var(--ui-primary)}
+.settings-theme-options button:hover:not(.selected){background:var(--ui-hover);color:var(--ui-text)}
+.settings-switch{flex:none;display:inline-block;position:relative;width:52px;height:31px;cursor:pointer}
+.settings-switch input{width:100%;height:100%;position:absolute;inset:0;z-index:1;opacity:0;cursor:pointer}
+.settings-switch span{display:block;width:52px;height:31px;border:2px solid var(--ui-stroke);background:var(--ui-soft);border-radius:19px;transition:background .2s,border-color .2s}
+.settings-switch span:after{content:"";display:block;width:23px;height:23px;position:absolute;left:4px;top:4px;background:var(--ui-card);box-shadow:0 1px 5px #0004;border-radius:50%;transition:transform .2s}
+.settings-switch input:checked+span{background:var(--ui-primary);border-color:var(--ui-primary)}
+.settings-switch input:checked+span:after{transform:translateX(21px)}
+.settings-switch input:focus-visible+span{outline:3px solid var(--ui-primary);outline-offset:3px}
+.settings-switch input:disabled{cursor:not-allowed}
+.settings-select,.settings-secondary,.settings-primary{font:inherit;font-size:13px;font-weight:700;border-radius:11px;min-height:41px;padding:9px 15px;text-decoration:none;cursor:pointer;color:var(--ui-text);background:var(--ui-soft);border:1px solid var(--ui-stroke)}
+.settings-select{min-width:144px;background:var(--ui-control)}
+.settings-primary{background:#286de0;color:#fff;border-color:#286de0}
+.settings-secondary:hover,.settings-select:hover{border-color:var(--ui-primary);color:var(--ui-text)}
+.settings-primary:hover{background:#1c59bc;color:#fff}
+.settings-secondary:disabled{opacity:.58;cursor:wait}
+.settings-footnote,.settings-bottom-note{font-size:12px;line-height:1.7;color:var(--ui-muted);margin:15px 0 0}
+.settings-bottom-note{padding:0 9px}
+.settings-feedback{padding:13px 17px;margin:2px 0 15px;border-radius:12px;background:var(--ui-soft);color:var(--ui-text);border:1px solid var(--ui-stroke);font-size:13px}
+@media(max-width:630px){.settings-heading>img{width:56px;height:56px;padding:9px}.settings-line-wrap{align-items:stretch;flex-direction:column;gap:13px}.settings-line-wrap>div:first-child{max-width:100%}.settings-line-wrap .settings-theme-options,.settings-line-wrap .settings-select,.settings-line-wrap .settings-secondary,.settings-line-wrap .settings-primary{width:100%;justify-content:center;text-align:center}.settings-theme-options button{flex:1}.settings-line{min-height:68px}}
+@media(prefers-reduced-motion:reduce){.settings-theme-options button,.settings-switch span,.settings-switch span:after{transition:none}}
+
+.settings-about-form{display:grid;gap:13px;padding-top:15px}
+.settings-about-form label{display:grid;gap:8px;min-width:0;color:var(--ui-text);font-size:13px;font-weight:700}
+.settings-about-form input,.settings-about-form textarea{background:var(--ui-control);color:var(--ui-text);border:1px solid var(--ui-stroke);border-radius:10px;padding:12px 13px;font:inherit;font-weight:400;width:100%;min-width:0}
+.settings-about-form textarea{resize:vertical;line-height:1.6}
+.settings-about-form :is(input,textarea):focus-visible{outline:2px solid var(--ui-primary);outline-offset:2px}
+.settings-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+.settings-about-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.settings-info-state{padding:25px 0;color:var(--ui-muted)}
+.settings-info-error,.settings-info-success{border:1px solid var(--ui-stroke);padding:12px;border-radius:10px;background:var(--ui-soft);color:var(--ui-text);margin:0}
+@media(max-width:620px){.settings-form-grid{grid-template-columns:minmax(0,1fr)}}

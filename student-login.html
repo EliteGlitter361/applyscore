@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="zh-CN" data-page="student-login">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.4.5"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>学生登录 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/student-login.css?v=2.2"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.4.6"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.5.2"></script>
+</head>
+<body class="page-student-login">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt="学分服务中心"></span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+  <div class="login-card">
+    <a href="/" class="btn-back">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 6l-6 6 6 6"/></svg>
+      返回首页
+    </a>
+    <img class="auth-role-icon" src="/assets/icons/学生登录.webp" alt="" loading="eager"><h2>学生登录</h2>
+    <div class="subtitle">请输入学号和密码登录</div>
+    <div class="error-box" id="errorBox" v-if="loginError">{{loginError}}</div>
+    <form id="loginForm" @submit.prevent="submitStudentLogin">
+      <div class="form-group">
+        <label>学号</label>
+        <input class="form-control" id="studentId" v-model.trim="studentId" required autocomplete="username" />
+      </div>
+      <div class="form-group">
+        <label>密码</label>
+        <input class="form-control" id="password" v-model="password" type="password" required autocomplete="current-password" />
+      </div>
+      <label class="checkbox-row">
+        <input type="checkbox" id="autoLogin" v-model="autoLogin" />
+        <span>自动登录（下次无需手动登录）</span>
+      </label>
+      <button type="submit" class="btn-submit" id="submitBtn" :disabled="loginPending"><span v-if="loginPending" class="btn-wait-spinner"></span>{{loginPending ? "登录中…" : "登录"}}</button>
+    </form>
+  </div>
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

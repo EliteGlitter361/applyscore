@@ -1,0 +1,17 @@
+
+.about-public-wrap{max-width:880px;margin:0 auto;width:100%}
+.about-public-heading{margin-bottom:24px}.about-public-heading h1{font-size:clamp(26px,3vw,34px);margin:12px 0 3px;color:#1c3555}.about-public-heading p{color:#76869c;margin:0}
+.about-pill{display:inline-block;border-radius:100px;background:#e7f1ff;color:#2562c5;font-size:11px;font-weight:800;letter-spacing:.1em;padding:6px 14px}
+.about-public-card{border:1px solid #e1e9f4;background:#fff;border-radius:24px;box-shadow:0 16px 50px rgba(30,66,120,.07);padding:clamp(22px,5vw,52px);overflow-wrap:anywhere}
+.about-brand-glyph{width:65px;height:65px;border-radius:19px;display:grid;place-items:center;background:linear-gradient(145deg,#2166dc,#5aa2ef);color:#fff;font-size:34px;font-weight:800;box-shadow:0 9px 24px #1a63c82c;margin-bottom:23px}
+.about-kicker{letter-spacing:.2em;font-size:11px;font-weight:800;color:#6486b3}.about-public-card h2{font-size:clamp(23px,3vw,32px);color:#1c3150;margin:12px 0}.about-subtitle{font-size:17px;color:#4e73a1;margin:0}
+.about-divider{height:1px;background:#e8eef6;margin:28px 0}.about-public-card h3{font-size:16px;color:#253c58;margin-bottom:13px}.about-description{white-space:pre-wrap;line-height:1.95;color:#4c5f77;font-size:15px}
+.about-metadata{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:26px}.about-metadata>div{background:#f5f8fd;border:1px solid #edf1f7;border-radius:14px;padding:13px 17px;display:flex;flex-direction:column;gap:4px;min-width:0}.about-metadata span{font-size:12px;color:#8492a6}.about-metadata strong,.about-metadata a{font-size:14px;color:#31547d;overflow-wrap:anywhere}.about-metadata a{color:#2266d8;text-decoration:underline;text-underline-offset:3px}
+.about-updated{margin:28px 0 0;color:#90a0b4;font-size:12px}.about-public-loading{min-height:200px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;color:#657992;text-align:center}.about-spinner{height:35px;width:35px;border:3px solid #dce8fa;border-right-color:#286bdf;border-radius:50%;animation:credit-about-spin .8s linear infinite}@keyframes credit-about-spin{to{transform:rotate(360deg)}}.about-retry{padding:9px 19px;border:0;background:#276ada;color:#fff;border-radius:11px}
+@media(max-width:560px){.about-metadata{grid-template-columns:1fr}.about-public-card{border-radius:19px}.about-public-heading{margin-bottom:16px}}
+
+/* v3.4.1: use the supplied favicon artwork, not the legacy 学 glyph. */
+.about-brand-glyph{background:var(--ui-soft,#eaf2ff);border:1px solid var(--ui-stroke,#dae5f2);overflow:hidden;box-shadow:0 7px 22px #102b4e19}
+.about-brand-glyph img{display:block;width:100%;height:100%;object-fit:contain;padding:7px;filter:drop-shadow(0 2px 3px #14345b15)}
+.about-public-loading,.about-public-heading h1,.about-public-card h2,.about-public-card h3{color:var(--ui-text,#192e4a)}
+.about-spinner{border-color:var(--ui-stroke,#dce8fa);border-right-color:var(--ui-primary,#286bdf)}

@@ -1,0 +1,11 @@
+# Local development only. Never commit real credentials.
+# Cloudflare Pages production/preview bindings must be configured in the dashboard.
+GITHUB_TOKEN="REPLACE_WITH_GITHUB_TOKEN"
+GITHUB_OWNER="REPLACE_WITH_GITHUB_ACCOUNT_OR_ORG"
+GITHUB_REPO="REPLACE_WITH_GITHUB_REPOSITORY"
+GITEE_TOKEN="REPLACE_WITH_GITEE_TOKEN"
+GITEE_OWNER="REPLACE_WITH_GITEE_ACCOUNT_OR_ORG"
+GITEE_REPO="REPLACE_WITH_GITEE_REPOSITORY"
+GITEE_BRANCH="master"
+# Optional: a dedicated secret for About page session signatures.
+# ABOUT_SESSION_SECRET="REPLACE_WITH_LONG_RANDOM_SECRET"

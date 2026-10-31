@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-CN" data-page="messages">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.4.5"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>我的消息 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/messages.css?v=2.9"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.4.6"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.4.5"></script>
+</head>
+<body class="page-messages">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt="学分服务中心"></span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+<div class="navbar">
+  <h1>我的消息</h1>
+  <div class="actions"><button type="button" class="btn btn-outline" :disabled="messagesBusy || messagesLoading || !messagesRows.some(m=>!m.read)" @click="invokePageAction('markAllRead')">{{messagesBusy?'正在处理…':'全部已读'}}</button></div>
+</div>
+<div class="container">
+  <div v-if="messagesLoading" class="empty-state" role="status">正在加载消息…</div>
+  <div v-else-if="messagesError" class="empty-state" role="alert"><p>{{messagesError}}</p><button type="button" class="btn btn-outline" @click="invokePageAction('loadMessages',true)">重新加载</button></div>
+  <div v-else-if="!messagesRows.length" class="empty-state">暂无消息</div>
+  <div v-else class="msg-list" aria-label="消息列表">
+    <button v-for="m in messagesRows" :key="m.id" type="button" class="msg-item" :class="{read:m.read}" @click="invokePageAction('openMessageDetail',m.id)">
+      <span class="msg-main"><span class="msg-title"><span v-if="!m.read" class="unread-dot" aria-label="未读"></span><span class="msg-type-tag" :class="m.typeClass">{{m.typeLabel}}</span> {{m.title}}</span><span class="msg-preview">{{m.preview}}</span></span>
+      <span class="msg-meta"><span class="msg-time">{{m.relativeTime}}</span><span class="msg-arrow" aria-hidden="true">›</span></span>
+    </button>
+  </div>
+</div>
+<div v-if="messageDetail" class="msg-detail-overlay show" @click.self="invokePageAction('closeMessageDetail')" role="presentation">
+  <div class="msg-detail-card" role="dialog" aria-modal="true" aria-labelledby="message-detail-title">
+    <div class="msg-detail-header"><h2 id="message-detail-title">{{messageDetail.title}}</h2><button type="button" class="msg-detail-close" @click="invokePageAction('closeMessageDetail')" aria-label="关闭消息详情">×</button></div>
+    <div class="msg-detail-meta"><span class="msg-type-tag" :class="messageDetail.typeClass">{{messageDetail.typeLabel}}</span><span class="msg-detail-time">{{messageDetail.fullTime}}</span></div>
+    <div class="msg-detail-content">{{messageDetail.content}}</div>
+  </div>
+</div>
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

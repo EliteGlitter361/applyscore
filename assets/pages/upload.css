@@ -1,0 +1,88 @@
+
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', 'PingFang SC', sans-serif; background: #f0f4ff; min-height: 100vh; display:flex; align-items:center; justify-content:center; padding:20px; }
+    .container { max-width:800px; width:100%; background:rgba(255,255,255,0.85); backdrop-filter:blur(12px); border-radius:42px; padding:40px 36px 48px; box-shadow:0 20px 60px rgba(0,20,50,0.15); border:1px solid rgba(255,255,255,0.4); }
+    .app-header { text-align:center; margin-bottom:20px; }
+    .app-header h1 { font-size:30px; font-weight:700; color:#0b1e3a; display:flex; align-items:center; justify-content:center; gap:10px; flex-wrap:wrap; }
+    .app-header h1 span { background:linear-gradient(135deg,#2a6df4,#1a4db5); color:#fff; font-size:14px; padding:4px 16px; border-radius:40px; }
+    .back-row { display:flex; align-items:center; gap:12px; margin-bottom:24px; flex-wrap:wrap; }
+    .btn-back { background:none; border:none; font-size:18px; font-weight:500; color:#2a6df4; cursor:pointer; padding:6px 12px 6px 4px; border-radius:40px; display:flex; align-items:center; gap:6px; transition:background 0.2s; text-decoration:none; font-family:inherit; }
+    .btn-back:hover { background:rgba(42,109,244,0.08); }
+    .btn-back svg { width:24px; height:24px; }
+    .back-row h2 { font-size:22px; font-weight:600; color:#0b1e3a; }
+    .form-group { margin-bottom:20px; }
+    .form-group label { display:block; font-weight:500; color:#1f2a44; margin-bottom:6px; font-size:15px; }
+    .form-group label .required { color:#e53e3e; margin-left:2px; }
+    .form-control, .flatpickr-input { width:100%; padding:14px 18px; border:2px solid #e2e8f0; border-radius:18px; font-size:15px; background:#ffffffcc; transition:border-color 0.25s, box-shadow 0.25s; font-family:inherit; color:#1a202c; }
+    textarea.form-control { resize:vertical; min-height:60px; }
+    .form-control:focus, .flatpickr-input:focus { outline:none; border-color:#2a6df4; box-shadow:0 0 0 4px rgba(42,109,244,0.15); background:#fff; }
+    .form-control:disabled, .form-control[readonly] { background:#f1f5f9; color:#64748b; cursor:not-allowed; }
+    .flatpickr-wrapper { position:relative; }
+    .flatpickr-wrapper .flatpickr-input { padding-right:44px; }
+    .date-icon { position:absolute; right:18px; top:50%; transform:translateY(-50%); pointer-events:none; opacity:0.55; color:#4a5568; display:flex; align-items:center; }
+    .date-icon svg { width:20px; height:20px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:18px; }
+    .upload-wrapper { display:flex; flex-direction:column; gap:14px; background:#f7fafc; padding:18px 20px; border-radius:18px; border:2px dashed #cbd5e0; }
+    .upload-control { display:flex; align-items:center; gap:16px; flex-wrap:wrap; }
+    .upload-control input[type="file"] { flex:1; font-size:14px; color:#4a5568; }
+    .upload-control input[type="file"]::file-selector-button { padding:8px 20px; border:none; border-radius:30px; background:#2a6df4; color:#fff; font-weight:600; margin-right:14px; cursor:pointer; font-family:inherit; }
+    .upload-control input[type="file"]::file-selector-button:hover { background:#1a4db5; }
+    .upload-badge { background:#2d3748; color:#fff; padding:4px 16px; border-radius:40px; font-size:14px; font-weight:500; white-space:nowrap; }
+    .upload-hint { font-size:13px; color:#718096; }
+    .preview-container { display:flex; flex-wrap:wrap; gap:14px; margin-top:12px; }
+    .preview-item { position:relative; width:100px; height:100px; border-radius:16px; overflow:hidden; border:2px solid #e2e8f0; background:#fff; cursor:pointer; }
+    .preview-item img { width:100%; height:100%; object-fit:cover; }
+    .preview-item .remove-btn { position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.6); color:#fff; border:none; border-radius:50%; width:24px; height:24px; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; font-family:inherit; }
+    .btn-submit { width:100%; padding:16px; background:linear-gradient(135deg,#2a6df4,#1a4db5); color:#fff; border:none; border-radius:28px; font-size:20px; font-weight:600; cursor:pointer; transition:all 0.25s ease; box-shadow:0 8px 24px rgba(42,109,244,0.3); margin-top:8px; display:flex; align-items:center; justify-content:center; gap:8px; font-family:inherit; }
+    .btn-submit:hover:not(:disabled) { transform:translateY(-2px); box-shadow:0 12px 32px rgba(42,109,244,0.4); }
+    .btn-submit:disabled { opacity:0.6; cursor:not-allowed; transform:none; }
+    .toast { position:fixed; top:30px; left:50%; transform:translateX(-50%) translateY(-80px); background:#1a202c; color:#fff; padding:14px 32px; border-radius:60px; font-weight:500; font-size:16px; z-index:9999; transition:transform 0.5s cubic-bezier(0.34,1.56,0.64,1), opacity 0.4s; opacity:0; pointer-events:none; max-width:90%; text-align:center; }
+    .toast.show { transform:translateX(-50%) translateY(0); opacity:1; }
+    .toast.success { background:#22543d; }
+    .toast.error { background:#7a2e2e; }
+    .progress-container { margin-top:20px; display:none; }
+    .progress-bar { width:100%; height:8px; background-color:#e2e8f0; border-radius:4px; overflow:hidden; }
+    .progress-fill { width:0%; height:100%; background-color:#2a6df4; transition:width 0.3s; }
+    .progress-text { font-size:14px; color:#718096; margin-top:5px; text-align:center; }
+    #statusMessage { text-align:center; margin-top:10px; font-weight:600; color:#2a6df4; display:none; font-size:16px; }
+    .image-modal { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); display:flex; align-items:center; justify-content:center; z-index:9999; cursor:pointer; padding:20px; }
+    .image-modal img { max-width:90%; max-height:90%; object-fit:contain; border-radius:12px; box-shadow:0 8px 40px rgba(0,0,0,0.6); }
+
+    @media (max-width: 768px) {
+      body { padding:12px; }
+      .container { padding:24px 18px; border-radius:28px; }
+      .app-header h1 { font-size:24px; }
+      .form-row { grid-template-columns:1fr; gap:12px; }
+      .form-group { margin-bottom:14px; }
+      .form-control, .flatpickr-input { padding:12px 14px; font-size:14px; border-radius:14px; }
+      .btn-submit { font-size:18px; padding:14px; }
+      .upload-wrapper { padding:14px; }
+      .preview-item { width:80px; height:80px; }
+      .toast { font-size:14px; padding:10px 20px; }
+    }
+  
+
+.application-progress-overlay{position:fixed;inset:0;background:rgba(10,26,49,.65);backdrop-filter:blur(8px);z-index:25000;display:flex;align-items:center;justify-content:center;padding:20px;overscroll-behavior:contain}
+.application-progress-dialog{width:min(440px,100%);border-radius:23px;padding:32px 29px;background:white;box-shadow:0 30px 90px rgba(0,16,45,.25);text-align:center;animation:application-dialog-pop .2s ease-out;outline:none}
+@keyframes application-dialog-pop{from{opacity:.3;transform:translateY(8px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+.application-progress-icon{width:60px;height:60px;border-radius:19px;background:#eaf2ff;color:#286add;display:grid;place-items:center;margin:0 auto 19px}.application-progress-icon.error{background:#fff0f0;color:#d74949}.application-progress-icon.success{background:#eaf9ef;color:#219657}.application-progress-spinner{width:29px;height:29px;border-radius:50%;border:3px solid #bfdbfe;border-right-color:#2569dc;animation:application-spin .8s linear infinite}@keyframes application-spin{to{transform:rotate(360deg)}}
+.application-success-icon,.application-error-icon{font-size:31px;font-weight:800}.application-progress-dialog h2{font-size:22px;color:#1d3553;margin:0 0 12px}.application-progress-detail{font-size:14px;color:#647991;line-height:1.8;margin:0 0 22px}
+.application-progress-track{height:10px;background:#e9eff8;overflow:hidden;border-radius:99px}.application-progress-track-fill{height:100%;border-radius:99px;background:linear-gradient(90deg,#2e6ddd,#4aa5e9);transition:width .2s ease;width:0%}
+.application-progress-number{font-size:13px;color:#5779a5;margin-top:11px;font-variant-numeric:tabular-nums}.application-progress-actions{margin-top:20px}.application-progress-actions button{border:0;background:#2466d5;color:white;border-radius:12px;padding:12px 22px;font-weight:700}.application-progress-actions button:focus-visible{outline:3px solid #94bffa}
+@media(max-width:480px){.application-progress-dialog{padding:27px 19px}.application-progress-dialog h2{font-size:20px}}
+@media(prefers-reduced-motion:reduce){.application-progress-spinner{animation-duration:2s}}
+
+/* v3.4: Vue-owned image previews and theme-aware application form. */
+.page-upload .container { background:var(--ui-card,#fff); border-color:var(--ui-stroke, #dae4f0); }
+.page-upload .back-row h2,.page-upload .form-group label { color:var(--ui-text, #192b45); }
+.page-upload .form-control { color:var(--ui-text, #192b45);background:var(--ui-control, #fff);border-color:var(--ui-stroke, #d8e1eb); }
+.page-upload .upload-wrapper { background:var(--ui-soft, #f7fafc); border-color:var(--ui-stroke, #d8e1eb); }
+.page-upload .upload-control input[type=file],.page-upload .upload-hint { color:var(--ui-muted, #697c91); }
+.page-upload .preview-item { border-color:var(--ui-stroke, #d8e1eb); }
+.page-upload .preview-image-button { width:100%;height:100%;display:block;border:0;padding:0;background:transparent;cursor:zoom-in; }
+.page-upload .image-processing { color:var(--ui-muted, #697c91);align-self:center; }
+.page-upload .image-modal { z-index:25100; }
+.page-upload .image-modal-close { position:absolute;right:clamp(16px,4vw,45px);top:clamp(16px,4vw,36px);border:0;background:#263852;color:white;width:40px;height:40px;border-radius:50%;font-size:26px;cursor:pointer; }
+.page-upload .application-progress-dialog { background:var(--ui-card, #fff);border:1px solid var(--ui-stroke, #dae4f0); }
+.page-upload .application-progress-dialog h2 { color:var(--ui-text, #1d3553); }
+.page-upload .application-progress-detail { color:var(--ui-muted, #647991); }

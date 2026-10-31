@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="zh-CN" data-page="dashboard">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.4.5"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>审核工作台 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/dashboard.css?v=3.1"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.4.6"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.4.5"></script>
+</head>
+<body class="page-dashboard">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt="学分服务中心"></span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+  <div class="navbar">
+    <h1>审核工作台</h1>
+    <div class="nav-actions">
+<button v-if="!isSystem" class="btn btn-logout" @click="invokePageAction('logout')">退出登录</button>
+    </div>
+  </div>
+
+  <div class="permission-bar">
+    <span class="label">当前权限：</span>
+    <span>审核：<span class="permission-badge" :class="dashboardCanAudit?'allowed':'denied'">{{dashboardCanAudit?'已开启':'未开启'}}</span></span>
+    <span v-if="!isSystem">封禁：<span class="permission-badge" :class="dashboardCanBan?'allowed':'denied'">{{dashboardCanBan?'已开启':'未开启'}}</span></span>
+    <span v-if="dashboardPermissionError" role="alert" class="dashboard-error">{{dashboardPermissionError}}</span>
+  </div>
+
+  <main class="container dashboard-vue">
+    <div class="tabs-wrap"><div class="tabs" role="tablist" aria-label="审核状态">
+      <button type="button" class="tab-btn" :class="{active:dashboardActiveTab==='pending'}" :aria-selected="dashboardActiveTab==='pending'" @click="selectDashboardTab('pending')" role="tab">待审核 <span class="dashboard-count">{{dashboardPending.length}}</span></button>
+      <button type="button" class="tab-btn" :class="{active:dashboardActiveTab==='approved'}" :aria-selected="dashboardActiveTab==='approved'" @click="selectDashboardTab('approved')" role="tab">已审核 <span class="dashboard-count">{{dashboardApproved.length}}</span></button>
+      <button type="button" class="tab-btn" v-if="isSystem ? false : dashboardCanBan" :class="{active:dashboardActiveTab==='students'}" :aria-selected="dashboardActiveTab==='students'" @click="selectDashboardTab('students')" role="tab">封禁管理</button>
+    </div></div>
+    <div class="dashboard-toolbar">
+      <label class="dashboard-search-wrap"><span class="sr-only">搜索申请</span><input class="form-control" v-model.trim="dashboardSearch" :placeholder="dashboardActiveTab==='students'?'搜索学生姓名或学号':'搜索活动、申请人或学号'" autocomplete="off"/></label>
+      <button class="btn btn-outline" type="button" :disabled="dashboardRefreshing || dashboardBusy" @click="dashboardRefresh"><span class="dashboard-reload" :class="{'is-loading':dashboardRefreshing}">↻</span> 刷新</button>
+    </div>
+    <div v-if="dashboardActiveTab==='students' ? false : !!dashboardError" class="dashboard-alert" role="alert">{{dashboardError}} <button type="button" class="btn btn-outline btn-small" @click="dashboardRefresh">重试</button></div>
+    <div v-if="dashboardActionError" class="dashboard-alert" role="alert">{{dashboardActionError}}</div>
+
+    <section v-show="dashboardActiveTab==='pending'" aria-label="待审核申请">
+      <div v-if="dashboardLoading" class="app-list" aria-busy="true"><div class="skeleton-item" v-for="n in 3" :key="n"></div></div>
+      <div v-else-if="!dashboardPendingFiltered.length" class="empty">暂无符合条件的待审核申请</div>
+      <div v-else class="app-list">
+        <button type="button" class="app-item dashboard-app-card" v-for="app in dashboardPendingFiltered" :key="app.id" @click="dashboardOpen(app,false)">
+          <span class="info"><strong>{{app.name||'未知申请人'}}</strong> <span class="sub">学号：{{app.packageName||'-'}}</span>
+            <span class="sub">活动：{{app.versionName||'未命名活动'}} ｜ 时间：{{app.publisher||'未填写'}}</span>
+            <span v-if="app.participants" class="sub">参与名单：{{app.participants}}</span>
+          </span><span class="dashboard-card-arrow" aria-hidden="true">›</span>
+        </button>
+      </div>
+    </section>
+    <section v-show="dashboardActiveTab==='approved'" aria-label="已审核申请">
+      <div class="toolbar">
+        <button type="button" class="btn btn-danger" :disabled="dashboardBusy || !dashboardSelectedCount" @click="dashboardDeleteConfirm=true">删除选中（{{dashboardSelectedCount}}）</button>
+        <label class="dashboard-checkline"><input type="checkbox" :checked="dashboardAllApprovedSelected" @change="dashboardToggleAllApproved($event.target.checked)"/> 全选当前列表</label>
+      </div>
+      <div v-if="dashboardLoading" class="app-list" aria-busy="true"><div class="skeleton-item" v-for="n in 2" :key="n"></div></div>
+      <div v-else-if="!dashboardApprovedFiltered.length" class="empty">暂无符合条件的已审核申请</div>
+      <div v-else class="app-list">
+        <div class="app-item dashboard-app-card" v-for="app in dashboardApprovedFiltered" :key="app.id">
+          <label class="dashboard-approved-check"><input class="checkbox" type="checkbox" :checked="!!dashboardSelected[String(app.id)]" @change="dashboardSetSelected(app.id,$event.target.checked)" :aria-label="'选择'+app.name+'的申请'"/></label>
+          <div class="info"><strong>{{app.name||'未知申请人'}}</strong> <span class="sub">学号：{{app.packageName||'-'}}</span>
+            <div class="sub">活动：{{app.versionName||'未命名活动'}} ｜ 时间：{{app.publisher||'未填写'}}</div>
+            <div v-if="app.participants" class="sub">参与名单：{{app.participants}}</div></div>
+          <button type="button" class="btn btn-primary" @click="dashboardOpen(app,true)">查看</button>
+        </div>
+      </div>
+    </section>
+    <section v-if="dashboardActiveTab==='students' ? (isSystem ? false : dashboardCanBan) : false" aria-label="封禁管理">
+      <div v-if="dashboardStudentsError" class="dashboard-alert" role="alert">{{dashboardStudentsError}} <button type="button" class="btn btn-outline btn-small" @click="dashboardRefresh">重试</button></div>
+      <div v-if="dashboardStudentsLoading" class="skeleton-item" aria-busy="true"></div>
+      <div v-else-if="!dashboardStudentsFiltered.length" class="empty">暂无符合条件的学生</div>
+      <div v-else class="dashboard-student-table"><table><thead><tr><th>姓名</th><th>学号</th><th>状态</th><th>操作</th></tr></thead>
+        <tbody><tr v-for="student in dashboardStudentsFiltered" :key="String(student.studentId)">
+          <td>{{student.name}}</td><td>{{student.studentId}}</td><td><span class="permission-badge" :class="student.banned?'denied':'allowed'">{{student.banned?'已封禁':'正常'}}</span></td>
+          <td><button type="button" class="btn btn-danger btn-small" :disabled="dashboardBusy" @click="dashboardBanConfirm=student">{{student.banned?'解封':'封禁'}}</button></td>
+        </tr></tbody></table></div>
+    </section>
+  </main>
+
+  <div v-if="dashboardModalApp" class="audit-modal-overlay show" role="presentation" @click.self="dashboardClose">
+    <section class="audit-modal-card" role="dialog" aria-modal="true" aria-labelledby="dashboard-modal-title" tabindex="-1">
+      <div class="audit-modal-header"><h2 id="dashboard-modal-title">{{dashboardModalApp.versionName||'未命名活动'}}</h2>
+        <button type="button" class="audit-modal-close" :disabled="dashboardBusy" aria-label="关闭审核详情" @click="dashboardClose">×</button></div>
+      <div class="audit-modal-section"><div class="label">申请人</div><div class="value">{{dashboardModalApp.name||'未知'}} · 学号：{{dashboardModalApp.packageName||'-'}}</div></div>
+      <div class="audit-modal-section"><div class="label">活动时间</div><div class="value">{{dashboardModalApp.publisher||'-'}}</div></div>
+      <div v-if="dashboardModalApp.participants" class="audit-modal-section"><div class="label">活动参与名单</div><div class="value">{{dashboardModalApp.participants}}</div></div>
+      <div v-if="dashboardModalApp.rejectReason" class="audit-modal-section"><div class="label">驳回原因</div><div class="value dashboard-reason">{{dashboardModalApp.rejectReason}}</div></div>
+      <div v-if="dashboardModalApp.screenshots?.length" class="audit-modal-section"><div class="label">证明截图</div><div class="audit-modal-images">
+        <button type="button" class="img-wrapper" v-for="(file,i) in dashboardModalApp.screenshots" :key="i" @click="dashboardPreviewSrc=dashboardImageUrl(file)" :aria-label="'预览证明截图'+(i+1)">
+          <img v-if="!dashboardImageErrors[i]" :src="dashboardImageUrl(file)" loading="lazy" alt="证明截图" @error="dashboardImageErrors={...dashboardImageErrors,[i]:true}"/>
+          <span v-else class="placeholder">图片加载失败</span>
+        </button>
+      </div></div>
+      <div v-if="dashboardModalReadOnly ? false : !dashboardCanAudit" class="dashboard-alert">您没有审核权限</div>
+      <div class="audit-modal-actions">
+        <template v-if="dashboardModalReadOnly ? false : dashboardCanAudit">
+          <button type="button" class="btn btn-approve" :disabled="dashboardBusy" @click="dashboardReview('approve')">通过</button>
+          <button type="button" class="btn btn-needs-fix" :disabled="dashboardBusy" @click="dashboardAskReason('needs_fix')">驳回修改</button>
+          <button type="button" class="btn btn-reject" :disabled="dashboardBusy" @click="dashboardAskReason('reject')">不通过</button>
+        </template>
+        <button v-else type="button" class="btn btn-skip" :disabled="dashboardBusy" @click="dashboardClose">关闭</button>
+      </div>
+    </section>
+  </div>
+  <div v-if="dashboardReasonMode" class="audit-modal-overlay show dashboard-front-dialog" @click.self="dashboardBusy ? null : dashboardCancelReason()">
+    <section class="audit-modal-card dashboard-small-dialog" role="dialog" aria-modal="true" aria-labelledby="dashboard-reason-title">
+      <div class="audit-modal-header"><h2 id="dashboard-reason-title">{{dashboardReasonMode==='needs_fix'?'驳回修改':'不通过并删除'}}</h2></div>
+      <p>{{dashboardReasonMode==='needs_fix'?'请填写需要修改的原因，此申请将保留在待修改区。':'请填写不通过原因，申请将永久删除。'}}</p>
+      <textarea v-model="dashboardReasonText" class="form-control dashboard-reason-input" rows="4" maxlength="1000" placeholder="请详细说明原因"></textarea>
+      <div v-if="dashboardReasonError" class="dashboard-alert" role="alert">{{dashboardReasonError}}</div>
+      <div v-if="dashboardRejectConfirm" class="dashboard-warning" role="alert">最终确认：此操作将永久删除申请，无法恢复。</div>
+      <div class="audit-modal-actions"><button type="button" class="btn btn-skip" :disabled="dashboardBusy" @click="dashboardCancelReason">取消</button>
+        <button type="button" class="btn" :class="dashboardReasonMode==='needs_fix'?'btn-needs-fix':'btn-reject'" :disabled="dashboardBusy" @click="dashboardSubmitReason">{{dashboardBusy?'正在处理…': dashboardRejectConfirm?'确认永久删除':'确定'}}</button></div>
+    </section>
+  </div>
+  <div v-if="dashboardDeleteConfirm" class="audit-modal-overlay show dashboard-front-dialog" @click.self="dashboardBusy ? null : (dashboardDeleteConfirm=false)">
+    <section class="audit-modal-card dashboard-small-dialog" role="dialog" aria-modal="true" aria-labelledby="dashboard-delete-title">
+      <h2 id="dashboard-delete-title">确认删除</h2><p>确定永久删除选中的 {{dashboardSelectedCount}} 个已审核申请吗？此操作不可恢复。</p>
+      <div class="audit-modal-actions"><button type="button" class="btn btn-skip" :disabled="dashboardBusy" @click="dashboardDeleteConfirm=false">取消</button><button type="button" class="btn btn-danger" :disabled="dashboardBusy" @click="dashboardDeleteSelected">{{dashboardBusy?'正在删除…':'确认删除'}}</button></div>
+    </section>
+  </div>
+  <div v-if="dashboardBanConfirm" class="audit-modal-overlay show dashboard-front-dialog" @click.self="dashboardBusy ? null : (dashboardBanConfirm=null)">
+    <section class="audit-modal-card dashboard-small-dialog" role="dialog" aria-modal="true" aria-labelledby="dashboard-ban-title">
+      <h2 id="dashboard-ban-title">确认{{dashboardBanConfirm.banned?'解封':'封禁'}}</h2><p>确定{{dashboardBanConfirm.banned?'解封':'封禁'}} {{dashboardBanConfirm.name}}（{{dashboardBanConfirm.studentId}}）吗？</p>
+      <div class="audit-modal-actions"><button type="button" class="btn btn-skip" :disabled="dashboardBusy" @click="dashboardBanConfirm=null">取消</button><button type="button" class="btn btn-danger" :disabled="dashboardBusy" @click="dashboardToggleBan">{{dashboardBusy?'正在处理…':'确认'}}</button></div>
+    </section>
+  </div>
+  <div v-if="dashboardPreviewSrc" class="image-viewer-modal" role="dialog" aria-modal="true" aria-label="截图预览" @click.self="dashboardPreviewSrc=''">
+    <img :src="dashboardPreviewSrc" alt="申请证明大图"/><button type="button" class="dashboard-image-close" aria-label="关闭预览" @click="dashboardPreviewSrc=''">×</button>
+  </div>
+  <div v-if="dashboardBusy" class="dashboard-operation-overlay" role="status" aria-live="polite"><span class="dashboard-operation-spinner"></span><span>正在处理，请勿关闭页面…</span></div>
+
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

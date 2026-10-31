@@ -1,0 +1,41 @@
+import assert from 'node:assert/strict';
+import {onRequest} from '../functions/api/about.js';
+import {makeAboutSession,verifyAboutSession} from '../functions/utils/about-session.js';
+const env={GITEE_TOKEN:'test-secret-of-ample-length-123456',GITEE_OWNER:'demo',GITEE_REPO:'credit',GITEE_BRANCH:'master',GITHUB_TOKEN:'github-token',GITHUB_OWNER:'demo',GITHUB_REPO:'backend'};
+const utf8base64 = data => Buffer.from(JSON.stringify(data),'utf8').toString('base64');
+let saved=null, writes=0;
+const admins=[{username:'owner',role:'system'},{username:'helper',role:'admin'}];
+globalThis.fetch=async (input,opts={})=>{
+ const url=String(input);
+ if(url.includes('api.github.com')) return new Response(JSON.stringify({content:utf8base64(admins),sha:'sha-github'}),{status:200});
+ if(url.includes('gitee.com') && (opts.method==='POST'||opts.method==='PUT')) {
+  writes++;
+  const body=JSON.parse(opts.body);
+  assert.equal(body.branch,'master');
+  saved=JSON.parse(Buffer.from(body.content,'base64').toString('utf8'));
+  return new Response(JSON.stringify({content:{sha:'new-sha'}}),{status:200});
+ }
+ if(url.includes('gitee.com')) return saved ? new Response(JSON.stringify({content:utf8base64(saved),sha:'sha-gitee'}),{status:200}) : new Response('Not found',{status:404});
+ throw new Error('unexpected fetch: '+url);
+};
+const context=(method,token,body)=>({env,request:new Request('https://example.invalid/api/about',{method,headers:token?{'Authorization':'Bearer '+token,'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined})});
+const get=async()=>{const res=await onRequest(context('GET'));return [res.status,await res.json()]};
+const [initialStatus,initial]=await get();
+assert.equal(initialStatus,200); assert.equal(initial.info.version,'1.7');
+const editor={title:'平台说明',subtitle:'副标题',description:'第一行\n第二行',organization:'学校',version:'1.7',contactEmail:'teacher@example.edu',website:'https://example.org'};
+const token=await makeAboutSession(env,{role:'system',username:'owner'});
+assert.equal((await verifyAboutSession(env,token)).username,'owner');
+assert.equal(await verifyAboutSession(env,token+'tamper'),null);
+const unauth=await onRequest(context('PUT','fake-jwt-system',editor));
+assert.equal(unauth.status,403);assert.equal(writes,0);
+const malformed=await onRequest(context('PUT',token,{...editor,title:'X'.repeat(80)}));
+assert.equal(malformed.status,400);assert.equal(writes,0);
+const dangerous=await onRequest(context('PUT',token,{...editor,website:'javascript:alert(1)'}));
+assert.equal(dangerous.status,400);
+const authorized=await onRequest(context('PUT',token,editor));
+assert.equal(authorized.status,200);assert.equal(writes,1);
+assert.equal(saved.title,editor.title);assert.equal(saved.description,editor.description);
+const [readStatus,readData]=await get();assert.equal(readStatus,200);assert.equal(readData.info.title,editor.title);assert.ok(readData.updatedAt);
+const changedRoles=admins.splice(0,1,{username:'owner',role:'admin'});
+const revoked=await onRequest(context('PUT',token,editor));assert.equal(revoked.status,403);assert.equal(writes,1);
+console.log('PASS About public GET, first-save POST to Gitee, edit PUT payload, signed system auth, revoked role, tamper and invalid input');

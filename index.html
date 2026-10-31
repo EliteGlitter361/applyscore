@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="zh-CN" data-page="index">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.4.1"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.4.5"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>学分申请 · 总览 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="stylesheet" href="/assets/pages/index.css?v=3.4.8"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.4.4">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.4.6"></script>
+  <script defer src="/sync.js"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=2.9"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/app.js?v=3.5.2"></script>
+</head>
+<body class="page-index">
+  <div id="app"><div class="first-paint" aria-live="polite"><span class="first-paint-logo"><img src="/assets/icons/网页选项卡标题，网站logo.webp" alt="学分服务中心"></span><span>正在打开学分服务中心</span><span class="first-paint-bar"></span></div></div>
+  <template id="page-template">
+  <div class="container vue-index">
+    <div class="page-header">
+      <h1>学分总览</h1>
+      <div class="nav-actions" aria-label="账户操作">
+        <a class="btn btn-primary index-admin-login" href="/login.html">管理员登录</a>
+        <div v-if="indexLoggedIn ? !!indexUser : false" class="user-menu-wrapper">
+          <button type="button" class="user-badge" @click.stop="indexMenuOpen=!indexMenuOpen" :aria-expanded="indexMenuOpen" aria-label="账户操作菜单">
+            <span class="dot"></span><span>{{indexUser.name}} · {{indexUser.studentId}}</span><span class="caret" :class="{open:indexMenuOpen}">▼</span>
+          </button>
+          <div class="user-dropdown" v-show="indexMenuOpen">
+            <button type="button" class="user-dropdown-item" @click="indexChangePassword">修改密码</button>
+            <div class="user-dropdown-divider"></div>
+            <button type="button" class="user-dropdown-item danger" @click="indexLogout">退出登录</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <section v-if="indexAnnouncementOpen" class="index-announcement-page service-notice announcement-notice" aria-labelledby="announcementNoticeTitle" aria-describedby="announcementNoticeMessage">
+      <div class="notice-symbol" aria-hidden="true">!</div>
+      <div class="notice-label">服务状态通知</div>
+      <h2 id="announcementNoticeTitle">{{indexAnnouncementTitle}}</h2>
+      <p id="announcementNoticeMessage" class="announcement-notice-message">{{indexAnnouncementMessage}}</p>
+      <div v-if="indexAnnouncementShowConfirm" class="announcement-actions"><button type="button" class="btn announcement-confirm" @click="indexCloseAnnouncement">确定</button></div>
+    </section>
+    <div v-show="!indexAnnouncementOpen" class="index-normal-content">
+    <div class="search-bar">
+      <input type="search" v-model="indexSearch" @input="indexSearchChanged" placeholder="搜索姓名、学号或活动名称..." aria-label="搜索申请" />
+      <button type="button" class="refresh-btn" :disabled="indexRefreshing" @click="refreshIndexClick($event)">
+        <span :class="{'index-refresh-spinning':indexRefreshing}" aria-hidden="true">↻</span> 刷新
+      </button>
+    </div>
+    <div class="tabs-wrap">
+      <div class="tabs" role="tablist" aria-label="学分状态">
+        <button type="button" class="tab-btn" role="tab" :aria-selected="indexTab==='pending'" :class="{active:indexTab==='pending'}" @click="indexToggleTab('pending')">待发放的学分</button>
+        <button type="button" class="tab-btn" role="tab" :aria-selected="indexTab==='needs-fix'" :class="{active:indexTab==='needs-fix'}" @click="indexToggleTab('needs-fix')">需要修改的学分</button>
+      </div>
+    </div>
+    <div v-if="indexError" class="empty-state" role="alert">加载失败：{{indexError}}</div>
+    <div v-else-if="indexTab==='needs-fix' ? !indexLoggedIn : false" class="login-prompt">
+      <div class="icon" aria-hidden="true">🔒</div>
+      <h3>您还未登录</h3><p>登录后可以查看需要修改的学分</p>
+      <a class="login-btn" href="/student-login.html?redirect=%2Findex.html">立即登录</a>
+    </div>
+    <div v-else-if="indexLoading ? !indexApps.length : false" class="app-grid" aria-live="polite">
+      <div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div><div class="skeleton skeleton-card"></div>
+    </div>
+    <div v-else class="app-grid" aria-live="polite">
+      <a v-for="app in visibleIndexApps" :key="app.id" class="app-card" :href="'/detail.html?id='+encodeURIComponent(app.id)">
+        <div class="app-title">{{app.versionName || '未命名活动'}}</div>
+        <div class="app-student">{{app.name || '未知'}} · {{app.packageName || ''}}</div>
+        <div class="app-meta"><span class="tag time">{{app.publisher || ''}}</span><span v-if="indexTab==='needs-fix'" class="tag rejected">需要修改</span></div>
+        <p v-if="indexTab==='needs-fix' ? !!app.rejectReason : false" class="vue-rejection">驳回原因：{{app.rejectReason}}</p>
+      </a>
+      <div v-if="!visibleIndexApps.length" class="empty-state">{{indexTab==='pending'?'暂无待发放的学分':'暂无需要修改的学分'}}</div>
+    </div>
+    </div><!-- /.index-normal-content -->
+  </div>
+  <div class="message-toast-container" aria-live="polite">
+    <a v-for="message in indexToasts" :key="message.id" href="/messages.html" class="message-toast system">
+      <div class="toast-header"><span class="toast-title">{{message.title}}</span><span class="toast-time">刚刚</span></div>
+      <div class="toast-content">{{message.text}}</div>
+    </a>
+  </div>
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>
