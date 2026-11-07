@@ -1,0 +1,63 @@
+/* v3.9.11 Admin/settings layout and palette contract. */
+html[data-theme] :is(.page-admin,.page-settings) .page-view{--management-card:var(--ui-card,#fff);--management-line:var(--ui-stroke,#dce5f1);--management-text:var(--ui-text,#22354e);--management-muted:var(--ui-muted,#61748c)}
+html[data-theme] .page-admin .page-view :is(.card,.admin-progress-dialog,.request-detail){background:var(--management-card)!important;color:var(--management-text)!important;border-color:var(--management-line)!important}
+html[data-theme] .page-admin .page-view :is(.navbar,.app-header){background:transparent!important;border:0!important;box-shadow:none!important;border-radius:0!important}
+html[data-theme] .page-admin .page-view :is(label,th,td,h2,h3,h4){color:var(--management-text)!important}
+html[data-theme] .page-admin .page-view :is(.admin-mobile-tab-select,.admin-progress-track){background:var(--ui-soft)!important;color:var(--management-text)!important;border-color:var(--management-line)!important}
+html[data-theme] .page-admin .page-view :is(.admin-progress-detail,.admin-progress-warning,.submission-last-update){color:var(--management-muted)!important}
+html[data-theme] .page-admin .page-view .admin-accounts-wrap{width:100%;max-width:100%;overflow-x:auto;border:1px solid var(--management-line);border-radius:14px}
+html[data-theme] .page-admin .page-view .vue-admin-table{width:100%;min-width:900px;border-collapse:collapse;background:transparent!important}
+html[data-theme] .page-admin .page-view .vue-admin-table th{background:var(--ui-soft)!important;white-space:nowrap;font-size:12px;padding:14px 12px}
+html[data-theme] .page-admin .page-view .vue-admin-table td{background:var(--management-card)!important;padding:14px 12px;border-color:var(--management-line)!important}
+html[data-theme="light"] .page-admin .page-view .toggle-btn{background:#edf2f8!important;color:#334e71!important;-webkit-text-fill-color:#334e71!important;border:1px solid #bfcde0!important}
+html[data-theme="light"] .page-admin .page-view .toggle-btn.active{background:#187451!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#187451!important}
+html[data-theme] .page-admin .page-view .toggle-btn{min-height:40px;min-width:64px;max-width:100%;line-height:1.4}
+html[data-theme] .page-admin .page-view .toggle-btn:disabled{opacity:1!important;cursor:default}
+html[data-theme] .page-settings .page-view .settings-pane{background:var(--management-card)!important;color:var(--management-text)!important;border-color:var(--management-line)!important}
+html[data-theme] .page-settings .page-view :is(.settings-secondary,.settings-select,.settings-theme-options){background:var(--ui-soft)!important;color:var(--management-text)!important;border-color:var(--management-line)!important}
+html[data-theme] .page-settings .page-view .settings-theme-options button{background:transparent!important;color:var(--management-muted)!important;-webkit-text-fill-color:var(--management-muted)!important}
+html[data-theme] .page-settings .page-view .settings-theme-options button.selected{background:var(--ui-highlight)!important;color:var(--ui-highlight-text)!important;-webkit-text-fill-color:var(--ui-highlight-text)!important;border-color:var(--ui-primary)!important}
+html[data-theme] .page-settings .page-view .settings-primary{background:#286bdb!important;color:#fff!important;-webkit-text-fill-color:#fff!important;border-color:#286bdb!important}
+@media(max-width:760px){
+ html[data-theme] :is(.page-admin,.page-settings) .page-view{padding:18px 12px!important;min-width:0!important}
+ html[data-theme] .page-admin .page-view :is(.container,.tab-content,.card){width:100%!important;min-width:0!important;max-width:100%!important;box-sizing:border-box!important}
+ html[data-theme] .page-admin .page-view .card{padding:18px 14px!important;margin-bottom:16px!important}
+ html[data-theme] .page-admin .page-view :is(.row,.form-row,.about-edit-grid){display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:14px!important}
+ html[data-theme] .page-admin .page-view .admin-accounts-wrap{overflow:visible!important;border:0!important}
+ html[data-theme] .page-admin .page-view .vue-admin-table{display:block!important;min-width:0!important;width:100%!important}
+ html[data-theme] .page-admin .page-view .vue-admin-table thead{display:none!important}
+ html[data-theme] .page-admin .page-view .vue-admin-table tbody{display:grid!important;gap:16px!important;width:100%!important}
+ html[data-theme] .page-admin .page-view .vue-admin-table tr{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;padding:14px!important;border:1px solid var(--management-line)!important;border-radius:14px!important;background:var(--ui-soft)!important}
+ html[data-theme] .page-admin .page-view .vue-admin-table td{display:flex!important;flex-direction:column!important;align-items:stretch!important;justify-content:flex-start!important;gap:8px!important;min-width:0!important;padding:0!important;border:0!important;background:transparent!important;text-align:left!important;overflow-wrap:anywhere;white-space:normal!important}
+ html[data-theme] .page-admin .page-view .vue-admin-table td::before{content:attr(data-label);font-size:12px;color:var(--management-muted);line-height:1.5}
+ html[data-theme] .page-admin .page-view .vue-admin-table td[data-label="用户名"]{font-weight:750}
+ html[data-theme] .page-admin .page-view .vue-admin-table td .btn,html[data-theme] .page-admin .page-view .vue-admin-table td .toggle-btn{width:100%!important;min-height:44px!important;margin:0!important}
+ html[data-theme] .page-settings .page-view .software-settings{width:100%!important;min-width:0!important;padding:0!important}
+ html[data-theme] .page-settings .page-view .settings-heading{align-items:flex-start;gap:12px}
+ html[data-theme] .page-settings .page-view .settings-heading>div{min-width:0}
+ html[data-theme] .page-settings .page-view .settings-heading>img{width:44px;height:44px;padding:6px;border-radius:12px}
+ html[data-theme] .page-settings .page-view .settings-pane{padding:18px 14px;margin-bottom:16px;min-width:0;box-sizing:border-box}
+ html[data-theme] .page-settings .page-view .settings-line{flex-wrap:wrap;align-items:flex-start;gap:14px}
+ html[data-theme] .page-settings .page-view .settings-line>div:first-child{flex:1 1 65%;min-width:0}
+ html[data-theme] .page-settings .page-view :is(.settings-theme-options,.settings-select,.settings-secondary,.settings-primary){max-width:100%;box-sizing:border-box}
+ html[data-theme] .page-settings .page-view .settings-theme-options{width:100%;display:flex}
+ html[data-theme] .page-settings .page-view .settings-theme-options button{flex:1;min-width:0;min-height:44px;padding:8px}
+}
+
+.admin-account-cards{display:none}.admin-account-card header{display:flex;align-items:center;gap:12px}.admin-account-card header img{width:42px;height:42px;object-fit:contain;background:var(--ui-soft);border-radius:10px;padding:4px}.admin-account-card h3{font-size:17px;margin:0;overflow-wrap:anywhere}.admin-account-card header p,.admin-system-hint{font-size:12px;color:var(--ui-muted);margin:4px 0 0}.admin-permission-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:16px 0}.admin-permission-item{display:flex;flex-direction:column;gap:7px;min-width:0}.admin-permission-item>span{font-size:12px;color:var(--ui-muted)}.admin-account-card footer{padding-top:12px;border-top:1px solid var(--ui-stroke);text-align:right}.admin-account-card footer .btn{min-height:44px}
+@media(max-width:760px){html[data-theme] .page-admin #adminTable .admin-accounts-wrap{display:none!important}html[data-theme] .page-admin #adminTable .admin-account-cards{display:grid!important;gap:14px!important}html[data-theme] .page-admin #adminTable .admin-account-card{padding:14px!important;background:var(--ui-card)!important;border:1px solid var(--ui-stroke)!important;border-radius:14px!important}html[data-theme] .page-admin #adminTable .admin-permission-item .toggle-btn{width:100%!important;min-height:44px!important;font-size:14px!important;padding:9px!important;margin:0!important}html[data-theme] .page-admin .page-view #adminTable{overflow:visible!important}.admin-system-hint{margin-top:10px!important;line-height:1.6}}
+
+@media(max-width:1024px){html[data-theme] .page-admin .page-view .admin-tab-switcher .tabs-wrap{display:none!important}}
+
+.inline-schedule-settings{margin:20px 0}.inline-schedule-settings legend{color:var(--ui-text)!important}.inline-schedule-settings .admin-settings-actions{flex-wrap:wrap}.inline-schedule-settings input[type="time"],.inline-schedule-settings input[type="datetime-local"]{max-width:100%;box-sizing:border-box;min-height:44px;color:var(--ui-text);background:var(--ui-control);border:1px solid var(--ui-stroke);border-radius:10px;padding:10px}.inline-schedule-settings p{margin:12px 0 0}@media(max-width:600px){.inline-schedule-settings .admin-radio-option{min-height:44px;display:inline-flex;align-items:center}}
+
+.file-task-editor{margin:22px 0;padding:22px;border:1px solid var(--ui-stroke);border-radius:16px;background:var(--ui-card);color:var(--ui-text)}
+.file-task-modal-overlay{position:fixed;inset:0;z-index:99990;background:#081322aa;display:grid;place-items:center;padding:24px;overflow:auto}
+.file-task-modal{width:min(760px,100%);max-height:calc(100dvh - 48px);overflow:auto;overscroll-behavior:contain;box-sizing:border-box;background:var(--ui-card);color:var(--ui-text);border:1px solid var(--ui-stroke);border-radius:20px;padding:24px;box-shadow:0 24px 70px #0005}
+.file-task-modal-heading{display:flex;justify-content:space-between;gap:16px;align-items:center}.file-task-modal-heading h2{margin:0}.file-task-modal .form-control{width:100%;box-sizing:border-box}.file-task-modal>label{display:block;margin:16px 0}.file-task-modal legend{color:var(--ui-text)!important}.file-task-modal .admin-settings-actions{flex-wrap:wrap}.file-task-modal input,.file-task-modal textarea{max-width:100%;box-sizing:border-box}
+@media(max-width:600px){.file-task-modal-overlay{padding:12px}.file-task-modal{max-height:calc(100dvh - 24px);padding:18px;border-radius:16px}.file-task-editor{padding:14px}.file-task-modal-heading button{min-width:44px;min-height:44px}}
+
+.page-admin .file-entrance-switch{position:relative;display:inline-block;width:52px!important;min-width:52px;height:30px;min-height:30px;padding:0!important;background:var(--ui-soft)!important;border:1px solid var(--ui-stroke)!important;border-radius:20px!important;cursor:pointer;vertical-align:middle;transition:background .18s!important}
+.page-admin .file-entrance-switch.is-on{background:#2569dc!important;border-color:#2569dc!important}.page-admin .file-entrance-switch .file-entrance-thumb{position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 4px #0004;transition:transform .18s}.page-admin .file-entrance-switch.is-on .file-entrance-thumb{transform:translateX(22px)}.page-admin .file-entrance-switch:focus-visible{outline:3px solid var(--ui-primary);outline-offset:3px}.page-admin .file-entrance-switch:disabled{cursor:not-allowed}.page-admin .file-entrance-state{color:var(--ui-muted);font-size:13px}.page-admin .file-entrance-switch:hover,.page-admin .file-entrance-switch:active{transform:none!important}@media(prefers-reduced-motion:reduce){.page-admin .file-entrance-switch,.page-admin .file-entrance-thumb{transition:none!important}}
+
+.file-task-detail-modal{width:min(1080px,100%)}.file-task-detail-modal .file-task-editor{padding:0;border:0;box-shadow:none;background:transparent}.file-task-detail-modal legend{color:var(--ui-text)!important}.file-task-detail-modal .uploaded-files-scroll{max-width:100%;overflow-x:auto}.file-task-modal-heading{position:sticky;top:-24px;background:var(--ui-card);z-index:2;padding:12px 0;border-bottom:1px solid var(--ui-stroke);margin-bottom:18px}.file-task-modal-heading h2{min-width:0;overflow-wrap:anywhere}.file-task-modal-heading>button{flex:none}@media(max-width:600px){.file-task-modal-heading{top:-18px}.file-task-detail-modal .admin-settings-actions{flex-wrap:wrap}}

@@ -1,0 +1,596 @@
+<!doctype html>
+<html lang="zh-CN" data-page="admin">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.6.3"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.9.45"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>系统管理 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="modulepreload" href="/assets/controllers/admin.mjs?v=3.9.78">
+  <link rel="stylesheet" href="/assets/pages/admin.css?v=3.9.45"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.9.45">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.9.45"></script>
+  <script defer src="/sync.js?v=3.9.45"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=3.9.45"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/assigned-proof.js?v=3.9.45"></script>
+  <script defer src="/assets/app.js?v=3.9.78"></script>
+<link rel="stylesheet" href="/assets/pages/management-responsive.css?v=3.9.45"><link rel="stylesheet" href="/assets/activity-cards.css?v=3.9.45"><link rel="stylesheet" href="/assets/audit-window.css?v=3.9.45"><meta name="application-version" content="3.9.45"><link rel="stylesheet" href="/assets/security-center.css?v=3.9.45"><link rel="stylesheet" href="/assets/announcement-themes.css?v=3.9.80"></head>
+<body class="page-admin">
+
+
+  <div id="app"></div>
+  <template id="page-template">
+
+
+  <div class="navbar">
+    <h1>系统管理 <small>System</small></h1>
+  </div>
+  <div class="container">
+    <div class="admin-tab-switcher">
+      <label class="admin-mobile-tab-select">管理功能
+        <select v-model="activeTab" @change="changeTab(activeTab)" aria-label="选择系统管理选项卡">
+          <option value="admins">管理员管理</option>
+          <option value="students">学生管理</option>
+          <option value="messages">消息发送</option>
+          <option value="tools">工具</option>
+          <option value="files">文件任务管理</option>
+          <option value="requests">指定申请</option><option value="request-activities">指定申请活动管理</option><option value="maintenance">系统安全</option>
+          <option value="logs">登录日志</option>
+          
+        </select>
+      </label>
+    <div class="tabs-wrap">
+      <div class="tabs" role="tablist">
+        <button class="tab-btn" :class="{active:activeTab==='admins'}" @click="changeTab('admins')" data-tab="admins" role="tab">管理员管理</button>
+        <button class="tab-btn" :class="{active:activeTab==='students'}" @click="changeTab('students')" data-tab="students" role="tab">学生管理</button>
+        <button class="tab-btn" :class="{active:activeTab==='messages'}" @click="changeTab('messages')" data-tab="messages" role="tab">消息发送</button>
+        <button class="tab-btn" :class="{active:activeTab==='tools'}" @click="changeTab('tools')" data-tab="tools" role="tab">工具</button>
+        <button class="tab-btn" :class="{active:activeTab==='files'}" @click="changeTab('files')" data-tab="files" role="tab">文件任务管理</button>
+        <button class="tab-btn" :class="{active:activeTab==='requests'}" @click="changeTab('requests')" data-tab="requests" role="tab">指定申请</button><button type="button" class="tab-btn" :class="{active:activeTab==='request-activities'}" @click="changeTab('request-activities')">指定申请活动管理</button><button class="tab-btn" :class="{active:activeTab==='maintenance'}" @click="changeTab('maintenance')" data-tab="maintenance" role="tab">系统安全</button>
+        <button class="tab-btn" :class="{active:activeTab==='logs'}" @click="changeTab('logs')" data-tab="logs" role="tab">登录日志</button>
+        
+      </div>
+    </div>
+
+    </div>
+
+    <!-- 管理员管理 -->
+    <div id="tab-admins" class="tab-content" :class="{active:activeTab==='admins'}">
+      <div class="card">
+        <h2>管理员列表</h2>
+        <div id="adminTable" aria-live="polite">
+          <div v-if="adminListError" class="empty-state" role="alert">{{adminListError}}</div>
+          <div v-else-if="adminRows === null"><div class="skeleton-table-row"></div><div class="skeleton-table-row"></div></div>
+          <div v-else-if="adminRows.length === 0" class="empty-state">暂无管理员</div>
+          <div v-else class="admin-account-views"><div class="admin-accounts-wrap"><table class="vue-admin-table">
+            <thead><tr><th>ID</th><th>用户名</th><th>角色</th><th>审核权限</th><th>封禁权限</th><th>指定申请权限</th><th>消息发送权限</th><th>文件查看权限</th><th>操作</th></tr></thead>
+            <tbody>
+              <tr v-for="u in adminRows" :key="u.id || u.username">
+                <td data-label="ID">{{u.id}}</td><td data-label="用户名">{{u.username}}</td><td data-label="角色">{{u.role}}</td>
+                <td data-label="审核权限"><button class="toggle-btn" :class="{active:!!u.auditPermission}" @click="invokePageAction('togglePerm', $event.currentTarget, u.username, !!u.auditPermission)">{{u.auditPermission ? '开启':'关闭'}}</button></td>
+                <td data-label="封禁权限"><button class="toggle-btn" :class="{active:!!u.canBan}" @click="invokePageAction('toggleBanPerm', $event.currentTarget, u.username, !!u.canBan)">{{u.canBan ? '允许':'禁止'}}</button></td><td data-label="指定申请权限"><button type="button" class="toggle-btn" :class="{active:!!u.assignedPermission}" :disabled="u.role==='system'||requestBusy" @click="toggleAssignedPermission(u)">{{u.assignedPermission?'开启':'关闭'}}</button></td><td v-for="permission in ['messagePermission','filePermission']" :key="permission" :data-label="permission==='messagePermission'?'消息发送权限':'文件查看权限'"><button type="button" class="toggle-btn" :class="{active:u.role==='system'||!!u[permission]}" :disabled="u.role==='system'||requestBusy" @click="toggleToolPermission(u,permission)">{{u.role==='system'||u[permission]?'开启':'关闭'}}</button></td>
+                <td data-label="操作"><button v-if="u.role !== 'system'" class="btn btn-danger btn-small" @click="invokePageAction('deleteAdmin', $event.currentTarget, u.username)">删除</button></td>
+              </tr>
+            </tbody>
+          </table></div><div class="admin-account-cards"><article v-for="u in adminRows" :key="u.id||u.username" class="admin-account-card"><header><img :src="u.role==='system'?'/assets/icons/system账户头像.png':'/assets/icons/admin账户头像.webp'" alt=""><div><h3>{{u.username}}</h3><p>{{u.role}} · ID {{u.id}}</p></div></header><div class="admin-permission-grid"><div v-for="permission in adminPermissionDefinitions" :key="permission.key" class="admin-permission-item"><span>{{permission.label}}</span><button type="button" class="toggle-btn" :class="{active:u.role==='system'||!!u[permission.key]}" :disabled="u.role==='system'||requestBusy" @click="toggleAdminAccountPermission(u,permission.key,$event)">{{u.role==='system'||u[permission.key]?'开启':'关闭'}}</button></div></div><footer v-if="u.role!=='system'"><button type="button" class="btn btn-danger" @click="invokePageAction('deleteAdmin',$event.currentTarget,u.username)">删除账户</button></footer><p v-else class="admin-system-hint">系统账户权限固定开启</p></article></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>创建管理员</h2>
+        <div class="row">
+          <div class="form-group"><label>用户名</label><input class="form-control" id="newUsername" placeholder="用户名" /></div>
+          <div class="form-group"><label>密码（至少8位）</label><input class="form-control" id="newPassword" type="password" placeholder="密码" /></div>
+        </div>
+        <div class="form-group"><label>角色</label>
+          <select class="form-control" id="newRole">
+            <option value="admin">Admin</option>
+            <option value="system">System</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" @click="invokePageAction('createAdmin', $event.currentTarget)">创建管理员</button>
+      </div>
+    </div>
+
+    <!-- 学生管理 -->
+    <div id="tab-students" class="tab-content" :class="{active:activeTab==='students'}">
+      <div class="card">
+        <h2>学生名单</h2>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;margin-bottom:16px;">
+          <button class="btn btn-danger" @click="invokePageAction('deleteSelectedStudents', $event.currentTarget)" :disabled="adminStudentsSelectedCount===0 || adminStudentsLoading">删除选中</button>
+          <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+            <input type="checkbox" id="selectAllStudents" :checked="adminStudentsAllSelected" @change="adminSelectAllStudents($event.target.checked)"> 全选
+          </label>
+          <span style="color:#718096;font-size:14px;">已选 <strong id="selectedCount">{{adminStudentsSelectedCount}}</strong> 人</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead><tr>
+              <th><input type="checkbox" class="checkbox" id="selectAllTable" :checked="adminStudentsAllSelected" @change="adminSelectAllStudents($event.target.checked)"></th>
+              <th>姓名</th>
+              <th>学号</th>
+              <th>密码</th>
+              <th>状态</th>
+              <th>操作</th>
+            </tr></thead>
+            <tbody id="studentTableBody">
+              <tr v-if="adminStudentsLoading"><td colspan="6" class="empty-state">正在加载学生名单…</td></tr>
+              <tr v-else-if="adminStudentsError"><td colspan="6" class="empty-state" role="alert">{{adminStudentsError}}</td></tr>
+              <tr v-for="s in adminStudentsRows" :key="String(s.studentId)">
+                <td><input type="checkbox" class="checkbox student-checkbox" :value="String(s.studentId)" :checked="!!adminStudentSelected[String(s.studentId)]" @change="adminSelectStudent(s.studentId,$event.target.checked)"></td>
+                <td>{{s.name}}</td><td>{{s.studentId}}</td>
+                <td><code v-if="s.password" class="pwd-code">{{s.password}}</code><span v-else class="text-muted">未设置</span></td>
+                <td><span class="badge" :class="s.banned?'badge-danger':'badge-success'">{{s.banned?'已封禁':'正常'}}</span></td>
+                <td><div class="admin-student-actions">
+                  <button class="btn btn-warning btn-small" @click="invokePageAction('resetStudentPassword',$event.currentTarget,s.studentId,s.password||'')">重置密码</button>
+                  <button class="btn btn-warning btn-small" @click="invokePageAction('toggleBanStudent',$event.currentTarget,s.studentId,!!s.banned)">{{s.banned?'解封':'封禁'}}</button>
+                </div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="studentEmpty" v-if="adminStudentsEmpty" class="empty-state">暂无学生数据</div>
+      </div>
+
+      <div class="card">
+        <h2>手动添加学生</h2>
+        <div class="row">
+          <div class="form-group"><label>姓名</label><input class="form-control" id="newStudentName" placeholder="姓名" /></div>
+          <div class="form-group"><label>学号</label><input class="form-control" id="newStudentId" placeholder="学号" /></div>
+        </div>
+        <div class="form-group"><label>登录密码（可留空，学生将无法登录）</label><input class="form-control" id="newStudentPassword" placeholder="为学生设置登录密码" /></div>
+        <button class="btn btn-primary" @click="invokePageAction('addStudent', $event.currentTarget)">添加</button>
+      </div>
+
+      <div class="card">
+        <h2>批量导入（xls / xlsx）</h2>
+        <p style="color:#6b7280;font-size:14px;margin-bottom:8px;">文件需包含列：<strong>姓名</strong> 和 <strong>学号</strong>，可选 <strong>密码</strong> 列</p>
+        <div class="admin-settings-actions">
+          <input type="file" id="fileInput" accept=".xls,.xlsx" :disabled="adminImportBusy" @change="adminImportPickFile($event)" aria-label="选择学生 Excel 文件" />
+          <button class="btn btn-success" :disabled="adminImportBusy || !adminImportFile" @click="invokePageAction('importStudents', $event.currentTarget)">{{adminImportBusy?'正在导入…':'导入'}}</button>
+        </div>
+        <p v-if="adminImportFile" class="admin-muted">已选择：{{adminImportFile.name}}</p>
+        <div v-if="adminImportResult" id="importResult" class="admin-vue-result" role="status">{{adminImportResult}}</div>
+        <div v-if="adminImportVisible" id="importProgress" class="import-progress admin-vue-import-progress" role="progressbar" :aria-valuenow="adminImportPercent" aria-valuemin="0" aria-valuemax="100">
+          <div class="progress-bar"><div class="progress-fill" :style="{width:adminImportPercent+'%'}"></div></div>
+          <div class="progress-text">{{adminImportPercent}}%（{{adminImportDone}}/{{adminImportTotal}}）</div>
+        </div>
+        <details v-if="adminImportFailures.length" class="admin-muted"><summary>查看失败记录（{{adminImportFailures.length}} 条）</summary><div v-for="(message,index) in adminImportFailures" :key="index">{{message}}</div></details>
+      </div>
+    </div>
+
+    <!-- 消息发送 -->
+    <div id="tab-messages" class="tab-content" :class="{active:activeTab==='messages'}">
+      <div class="card">
+        <h2>向学生发送消息</h2>
+        <div class="form-group">
+          <label>选择接收学生（可多选）</label>
+          <div style="margin-bottom:8px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="btn btn-outline btn-small" @click="adminSelectAllMessageStudents(true)">全选</button>
+            <button class="btn btn-outline btn-small" @click="adminSelectAllMessageStudents(false)">清空选择</button>
+            <span style="color:#6b7a8f;font-size:13px;align-self:center;">已选 <strong id="msgSelectedCount">{{adminMessageSelectedCount}}</strong> 人</span>
+          </div>
+          <div class="student-select-list" id="msgStudentList" aria-live="polite">
+            <div v-if="adminMessageStudentsLoading" class="empty-state">正在加载接收学生…</div>
+            <div v-else-if="adminMessageStudentsError" class="empty-state" role="alert">{{adminMessageStudentsError}}</div>
+            <div v-else-if="!adminMessageStudents.length" class="empty-state">暂无学生</div>
+            <label v-for="s in adminMessageStudents" :key="String(s.studentId)" class="student-option">
+              <input type="checkbox" :value="String(s.studentId)" :checked="!!adminMessageSelected[String(s.studentId)]" @change="adminToggleMessageStudent(s.studentId,$event.target.checked)">
+              <span class="student-name">{{s.name}}</span><span class="student-id">{{s.studentId}}</span>
+            </label>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>消息标题</label>
+          <input class="form-control" id="msgTitle" placeholder="请输入消息标题" />
+        </div>
+        <div class="form-group">
+          <label>消息内容</label>
+          <textarea class="form-control" id="msgContent" rows="5" placeholder="请输入消息内容..."></textarea>
+        </div>
+        <button class="btn btn-primary" :disabled="adminProgress.busy" @click="invokePageAction('sendCustomMessage', $event.currentTarget)">发送消息</button>
+        <div v-if="adminMessageResult" id="msgSendResult" class="admin-vue-result" role="status">{{adminMessageResult}}</div>
+      </div>
+    </div>
+
+    <!-- 工具 -->
+    <div id="tab-tools" class="tab-content" :class="{active:activeTab==='tools'}">
+      <div class="card">
+        <h2>修改其他账户密码</h2>
+        <div class="row">
+          <div class="form-group"><label>用户名</label><input class="form-control" id="changePwdUsername" placeholder="用户名" /></div>
+          <div class="form-group"><label>新密码（至少8位）</label><input class="form-control" id="changePwdNewPwd" type="password" placeholder="新密码" /></div>
+        </div>
+        <button class="btn btn-warning" @click="invokePageAction('changePassword', $event.currentTarget)">修改密码</button>
+      </div>
+
+      <div class="card">
+        <h2>学分申请入口开关</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="font-weight:500;">申请入口状态：</label>
+          <button id="toggleEntryBtn" class="btn" :class="adminEntryEnabled?'btn-danger':'btn-success'" @click="adminEntryEnabled=!adminEntryEnabled">{{adminEntryEnabled?'关闭':'开启'}}</button>
+          <span id="entryStatus" class="admin-setting-status" :class="adminEntryEnabled?'state-on':'state-off'">当前：{{adminEntryEnabled?'开启':'关闭'}}</span>
+        </div>
+        <div class="form-group">
+          <label>自定义提示文字（当入口关闭时显示）</label>
+          <textarea class="form-control" id="entryMessage" v-model="adminEntryMessage" rows="3"></textarea>
+        </div>
+        <div class="admin-settings-actions">
+          <span id="entry-return-label">关闭学分入口时显示「返回学分总览」</span>
+          <button type="button" class="file-entrance-switch" role="switch" aria-labelledby="entry-return-label" :aria-checked="adminEntryClosedShowReturn" :class="{'is-on':adminEntryClosedShowReturn}" @click="adminEntryClosedShowReturn=!adminEntryClosedShowReturn"><span class="file-entrance-thumb"></span></button>
+          <span class="file-entrance-state">{{adminEntryClosedShowReturn?'显示':'隐藏'}}</span>
+        </div>
+        <div class="inline-schedule-settings">
+        <fieldset v-for="kind in ['open','close']" :key="kind" class="admin-setting-fieldset">
+          <legend>{{kind==='open'?'定时开启':'定时关闭'}}</legend>
+          <div class="admin-settings-actions"><label v-for="option in [{value:'none',label:'不设置'},{value:'duration',label:'按时长'},{value:'date',label:'按日期时间'},{value:'daily',label:'每天指定时间'}]" :key="option.value" class="admin-radio-option"><input type="radio" :name="'enabled-'+kind" :value="option.value" v-model="scheduleForms.enabled[kind].mode" @change="scheduleForms.enabled[kind].at=''">{{option.label}}</label></div>
+          <div v-if="scheduleForms.enabled[kind].mode==='duration'" class="admin-settings-actions"><label>时 <input type="number" v-model.number="scheduleForms.enabled[kind].hours" min="0" class="admin-number-small"></label><label>分 <input type="number" v-model.number="scheduleForms.enabled[kind].minutes" min="0" max="59" class="admin-number-small"></label></div>
+          <input v-if="['date','daily'].includes(scheduleForms.enabled[kind].mode)" :type="scheduleForms.enabled[kind].mode==='daily'?'time':'datetime-local'" v-model="scheduleForms.enabled[kind].at" class="form-control" :aria-label="kind==='open'?'定时开启时间':'定时关闭时间'">
+          <p class="admin-muted">{{scheduleForms.enabled[kind].mode==='none'?'不设置定时操作':'北京时间；随下方设置一起保存'}}</p>
+        </fieldset><p v-if="scheduleError" role="alert">{{scheduleError}}</p></div>
+        <button class="btn btn-primary" @click="invokePageAction('saveEntrySettings', $event.currentTarget)">保存设置</button>
+        <div v-if="adminEntryResult" id="entrySaveResult" class="admin-vue-result" role="status">{{adminEntryResult}}</div>
+      </div>
+
+      <section class="card" aria-labelledby="systemShutdownHeading">
+        <h2 id="systemShutdownHeading">系统全部关闭时间</h2>
+        <p class="admin-muted">到时关闭学生服务并在首页显示停服公告，管理员仍可登录。</p>
+        <fieldset class="admin-setting-fieldset">
+          <legend>设置方式</legend>
+          <div class="admin-settings-actions">
+            <label v-for="option in [{value:'none',label:'不设置'},{value:'duration',label:'按时长'},{value:'date',label:'按日期时间'}]" :key="option.value" class="admin-radio-option"><input type="radio" name="system-shutdown-mode" :value="option.value" v-model="adminSystemShutdownMode">{{option.label}}</label>
+          </div>
+          <div v-if="adminSystemShutdownMode==='duration'" class="admin-settings-actions">
+            <label>小时 <input type="number" v-model.number="adminSystemShutdownHours" min="0" step="1" class="admin-number-small"></label>
+            <label>分钟 <input type="number" v-model.number="adminSystemShutdownMinutes" min="0" max="59" step="1" class="admin-number-small"></label>
+            <span class="admin-muted">从保存时开始计时</span>
+          </div>
+          <div v-if="adminSystemShutdownMode==='date'" class="form-group">
+            <label for="systemClosesAt">停止服务时间（北京时间）</label>
+            <input id="systemClosesAt" class="form-control" type="datetime-local" v-model="adminSystemClosesAt">
+          </div>
+        </fieldset>
+        <p v-if="adminSystemShutdownSavedAt" class="admin-muted">已设置：{{new Date(adminSystemShutdownSavedAt).toLocaleString('zh-CN',{timeZone:'Asia/Shanghai'})}}（北京时间）</p>
+        <button type="button" class="btn btn-primary" @click="invokePageAction('saveSystemShutdownSettings', $event.currentTarget)">保存系统关闭时间</button>
+        <div v-if="adminSystemShutdownResult" class="admin-vue-result" role="status">{{adminSystemShutdownResult}}</div>
+      </section>
+
+      <div class="card">
+        <h2>文件上传任务设置</h2>
+        <div class="admin-settings-actions"><span id="file-entrance-label">文件上传入口</span><button type="button" class="file-entrance-switch" role="switch" aria-labelledby="file-entrance-label" :aria-checked="fileEntranceEnabled" :aria-busy="fileEntranceSaving" :disabled="fileEntranceSaving || fileTasksLoading" :class="{'is-on':fileEntranceEnabled}" @click="toggleFileEntrance"><span class="file-entrance-thumb"></span></button><span class="file-entrance-state">{{fileEntranceSaving?'保存中…':fileTasksLoading?'加载中…':fileEntranceEnabled?'已开启':'已关闭'}}</span><button type="button" class="btn btn-primary" @click="fileTaskCreate">创建新任务</button></div>
+      </div>
+
+      <div class="card">
+        <h2>主页公告</h2>
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+          <label style="font-weight:500;">公告状态：</label>
+          <button id="toggleAnnouncementBtn" class="btn" :class="adminAnnouncementEnabled?'btn-danger':'btn-success'" @click="adminAnnouncementEnabled=!adminAnnouncementEnabled">{{adminAnnouncementEnabled?'关闭':'开启'}}</button>
+          <span id="announcementStatus" class="admin-setting-status" :class="adminAnnouncementEnabled?'state-on':'state-off'">当前：{{adminAnnouncementEnabled?'开启':'关闭'}}</span>
+        </div>
+        <div class="form-group">
+          <label>公告标题</label>
+          <input type="text" class="form-control" id="announcementTitle" v-model="adminAnnouncementTitle" placeholder="系统公告" />
+        </div>
+        <div class="form-group">
+          <label for="announcementTheme">图片主题</label>
+          <select id="announcementTheme" class="form-control" v-model="adminAnnouncementTheme">
+            <option value="none">无主题</option>
+            <option value="meteors">流星雨的星空</option>
+            <option value="ocean">海底世界</option>
+            <option value="bamboo">武侠竹林</option>
+            <option value="grassland">大草原</option>
+            <option value="ink-landscape">水墨山水</option>
+          </select>
+          <div class="admin-settings-actions">
+            <span id="announcement-aero-label">背景图片 Aero 毛玻璃</span>
+            <button type="button" class="file-entrance-switch" role="switch" aria-labelledby="announcement-aero-label" :aria-checked="adminAnnouncementAero" :class="{'is-on':adminAnnouncementAero}" @click="adminAnnouncementAero=!adminAnnouncementAero"><span class="file-entrance-thumb"></span></button>
+          </div>
+          <div v-if="adminAnnouncementTheme!=='none'" class="announcement-theme-preview" :class="{'announcement-aero':adminAnnouncementAero}" :data-announcement-theme="adminAnnouncementTheme" role="img" aria-label="公告主题预览"></div>
+        </div>
+        <div class="form-group">
+          <label>公告内容（进入主页时显示关闭提示式通知）</label>
+          <textarea class="form-control" id="announcementMessage" v-model="adminAnnouncementMessage" rows="5"></textarea>
+        </div>
+        <div class="admin-settings-actions">
+          <label for="announcementConfirmSwitch">是否显示确定按钮：</label>
+          <input type="checkbox" id="announcementConfirmSwitch" v-model="adminAnnouncementShowConfirm" />
+          <span class="admin-setting-status" :class="adminAnnouncementShowConfirm?'state-on':'state-off'">{{adminAnnouncementShowConfirm?'显示':'不显示'}}</span>
+        </div>
+        <p class="admin-setting-hint">不显示时，首页公告会持续显示，不提供确认关闭按钮。</p>
+        <div class="inline-schedule-settings">
+        <fieldset v-for="kind in ['open','close']" :key="kind" class="admin-setting-fieldset">
+          <legend>{{kind==='open'?'定时开启':'定时关闭'}}</legend>
+          <div class="admin-settings-actions"><label v-for="option in [{value:'none',label:'不设置'},{value:'duration',label:'按时长'},{value:'date',label:'按日期时间'},{value:'daily',label:'每天指定时间'}]" :key="option.value" class="admin-radio-option"><input type="radio" :name="'announcementEnabled-'+kind" :value="option.value" v-model="scheduleForms.announcementEnabled[kind].mode" @change="scheduleForms.announcementEnabled[kind].at=''">{{option.label}}</label></div>
+          <div v-if="scheduleForms.announcementEnabled[kind].mode==='duration'" class="admin-settings-actions"><label>时 <input type="number" v-model.number="scheduleForms.announcementEnabled[kind].hours" min="0" class="admin-number-small"></label><label>分 <input type="number" v-model.number="scheduleForms.announcementEnabled[kind].minutes" min="0" max="59" class="admin-number-small"></label></div>
+          <input v-if="['date','daily'].includes(scheduleForms.announcementEnabled[kind].mode)" :type="scheduleForms.announcementEnabled[kind].mode==='daily'?'time':'datetime-local'" v-model="scheduleForms.announcementEnabled[kind].at" class="form-control" :aria-label="kind==='open'?'定时开启时间':'定时关闭时间'">
+          <p class="admin-muted">{{scheduleForms.announcementEnabled[kind].mode==='none'?'不设置定时操作':'北京时间；随下方设置一起保存'}}</p>
+        </fieldset><p v-if="scheduleError" role="alert">{{scheduleError}}</p></div>
+        <button class="btn btn-primary" @click="invokePageAction('saveAnnouncementSettings', $event.currentTarget)">保存公告设置</button>
+        <div v-if="adminAnnouncementResult" id="announcementSaveResult" class="admin-vue-result" role="status">{{adminAnnouncementResult}}</div>
+      </div>
+
+      <div class="card">
+        <h2>清空系统数据</h2>
+        <p style="color:#e53e3e;font-weight:600;">警告：此操作将永久删除所有申请数据和学生数据，且不可恢复！</p>
+        <button class="btn btn-danger" @click="invokePageAction('clearData', $event.currentTarget)" style="margin-top:12px;">确认清空数据</button>
+      </div>
+    </div>
+
+    <!-- 文件任务管理 -->
+    <div id="tab-files" class="tab-content" :class="{active:activeTab==='files'}">
+      <div class="card">
+        <h2>文件上传任务</h2><div class="file-task-batch-toolbar"><button type="button" class="btn btn-outline" :disabled="fileActionBusy || fileTasksLoading || !fileTasks.length" @click="selectAllFileTasks">全选 / 取消全选</button><span>已选 {{fileTasks.filter(t=>fileTaskSelected[t.id]).length}} 项</span><button type="button" class="btn btn-danger" :disabled="fileActionBusy || fileTasksLoading || !fileTasks.some(t=>fileTaskSelected[t.id])" @click="deleteSelectedFileTasks">删除所选</button><button type="button" class="btn btn-outline" :disabled="fileActionBusy || fileTasksLoading" @click="loadFileTasks">刷新</button></div><div class="file-task-list"><p v-if="fileTasksLoading" class="empty-state" role="status">正在加载文件任务…</p><div v-else-if="fileTaskError" class="empty-state" role="alert">{{fileTaskError}} <button class="btn btn-outline" @click="loadFileTasks">重新加载</button></div><p v-else-if="!fileTasks.length" class="empty-state" role="status">没有发布的文件任务</p><div v-else class="app-grid"><div v-for="t in fileTasks" :key="t.id" class="managed-file-task-card"><label class="file-task-select"><input type="checkbox" v-model="fileTaskSelected[t.id]" :disabled="fileActionBusy || fileTasksLoading" :aria-label="'选择任务：'+t.title"></label><button type="button" class="app-card" @click="fileTaskOpen(t.id)"><div class="app-title">{{t.title}}</div><div class="app-student">{{t.description || '点击查看任务设置与文件'}}</div><div class="app-meta"><span class="tag time">{{t.createdAt?adminFormatTime(t.createdAt):'文件上传任务'}}</span><span class="tag">{{fileRows.filter(r=>r.taskId===t.id).length}} 个文件</span></div></button><button type="button" class="file-task-card-delete" :disabled="fileActionBusy || adminUploadSaving" :aria-label="'删除任务：'+t.title" @click.stop="deleteFileTask(t)">删除任务</button></div></div><button v-if="fileRows.some(r=>!r.taskId || r.taskId==='legacy')" type="button" class="btn btn-outline" @click="fileTaskOpen('legacy')">查看历史上传文件</button></div>
+      </div>
+    </div>
+
+<section id="tab-requests" class="tab-content request-workspace" :class="{active:activeTab==='requests'}"><form class="card request-compose" @submit.prevent="createAssignedRequest"><header class="request-compose-heading"><div><div class="request-eyebrow">指定申请 · 创建任务</div><h2>发送学分申请</h2><p>填写活动信息，选择接收学生，设置材料要求与提交时间。</p></div><a class="btn btn-outline" href="/dashboard.html">前往审核台</a></header><div class="request-compose-grid"><section class="request-compose-main"><div class="request-step"><span>01</span><h3>活动信息</h3></div><div class="form-group"><label for="request-title">活动名称 *</label><input id="request-title" class="form-control" v-model.trim="requestTitle" required maxlength="120" placeholder="例如：志愿服务实践活动"></div><div class="form-group"><label for="request-description">申请说明</label><textarea id="request-description" class="form-control" v-model.trim="requestDescription" rows="4" placeholder="请说明活动内容、填写要求及证明材料要求"></textarea></div><div class="request-step"><span>02</span><h3>选择接收学生</h3><span class="request-selected-count">已选 {{requestSelectedCount}} 人</span></div><div class="request-picker-toolbar"><input class="form-control" type="search" v-model.trim="requestStudentSearch" placeholder="搜索姓名或学号" aria-label="搜索接收学生"><button type="button" class="btn btn-outline" @click="requestSelectAll">全选 / 取消全部</button></div><div class="request-student-list"><label v-for="s in requestStudentsFiltered" :key="String(s.studentId)" class="request-student-option"><input type="checkbox" :checked="!!requestStudentSelected[String(s.studentId)]" @change="requestToggleStudent(s.studentId,$event.target.checked)"><span>{{s.name}}<small>{{s.studentId}}</small></span></label><p v-if="!requestStudentsFiltered.length" class="empty-state">暂无匹配学生</p></div></section><aside class="request-compose-side"><div class="request-step"><span>03</span><h3>提交规则</h3></div><label class="request-switch"><span><strong>必须上传附件</strong><small>活动证明图片始终为必填</small></span><input type="checkbox" role="switch" v-model="requestAttachmentRequired"></label><fieldset class="request-expiry"><legend>申请有效期</legend><label><input type="radio" value="none" v-model="requestExpiryMode">不限制</label><label><input type="radio" value="date" v-model="requestExpiryMode">指定截止时间</label><label><input type="radio" value="duration" v-model="requestExpiryMode">按有效天数</label></fieldset><div v-if="requestExpiryMode==='date'" class="form-group"><label for="request-expiry">截止时间</label><input id="request-expiry" type="datetime-local" class="form-control" v-model="requestExpiresAt" required></div><div v-if="requestExpiryMode==='duration'" class="form-group"><label for="request-duration">有效天数</label><input id="request-duration" type="number" min="1" max="3650" class="form-control" v-model.number="requestDurationDays" required></div><div class="request-preview"><strong>{{requestTitle||'尚未填写活动名称'}}</strong><p>发送给 {{requestSelectedCount}} 位学生</p><p>{{requestAttachmentRequired?'附件必填':'附件选填'}} · {{requestExpiryMode==='none'?'长期有效':requestExpiryMode==='date'?(requestExpiresAt||'请选择截止时间'):requestDurationDays+' 天内有效'}}</p></div></aside></div><footer class="request-compose-footer"><p v-if="requestNotice" role="status">{{requestNotice}}</p><span v-else>发送后，学生可在“管理员发放的申请”中填写提交。</span><button type="submit" class="btn btn-primary" :class="{'request-submit-busy':requestBusy}" :disabled="requestBusy">{{requestBusy?'正在发送…':'发送给 '+requestSelectedCount+' 位学生'}}</button></footer></form></section><section class="tab-content request-workspace" :class="{active:activeTab==='request-activities'}" id="tab-request-activities"><div class="card"><h2>指定申请活动管理</h2><div class="request-actions"><label><input type="checkbox" :checked="assignedRequests.length>0 && assignedRequests.every(t=>requestActivitySelected[t.id])" @change="requestActivitySelected=Object.fromEntries(assignedRequests.map(t=>[t.id,$event.target.checked]))"> 全选活动</label><button type="button" class="btn btn-danger" :disabled="requestListBusy || !Object.values(requestActivitySelected).some(Boolean)" @click="deleteAssignedActivities">删除选中（{{Object.values(requestActivitySelected).filter(Boolean).length}}）</button></div><button class="btn btn-outline btn-small" @click="apiCacheRefreshRequests" :disabled="requestListBusy">{{requestListBusy?'正在刷新…':'刷新'}}</button><div class="app-grid"><article v-for="t in assignedRequests" :key="t.id" class="activity-card-choice"><label class="activity-card-select"><input type="checkbox" v-model="requestActivitySelected[t.id]" :aria-label="'选择活动：'+t.title"><span class="visually-hidden">选择活动</span></label><button type="button" class="app-card assigned-credit-card" @click="requestDetailId=t.id"><div class="app-title">{{t.title}}</div><div class="app-student">{{t.description || '点击查看申请详情与提交材料'}}</div><div class="app-meta"><span class="tag time">{{t.createdAt?adminFormatTime(t.createdAt):'长期有效'}}</span><span class="tag assigned-credit-tag">指定申请</span><span class="tag">{{(t.submissions||[]).length}} / {{(t.studentIds||[]).length}} 已提交</span></div></button></article><p v-if="!assignedRequests.length" class="empty-state">暂无已发送申请</p></div></div>
+<div v-if="requestDetail" class="request-overlay" @click.self="requestDetailId=null"><section class="request-detail" role="dialog" aria-modal="true" aria-label="指定申请详情" @keydown.esc="requestDetailId=null"><button type="button" class="request-window-close" aria-label="关闭指定申请详情" @click="requestDetailId=null">×</button><h2>{{requestDetail.title}}</h2><p class="request-description">{{requestDetail.description}}</p><p>指定 {{(requestDetail.studentIds||[]).length}} 人 · 已提交 {{(requestDetail.submissions||[]).length}} 人</p><p>截止：{{requestDetail.expiresAt?adminFormatTime(requestDetail.expiresAt):'长期有效'}} · {{requestDetail.attachmentRequired?'必须上传附件':'附件选填'}}</p><p>指定学号：{{(requestDetail.studentIds||[]).join('、')}}</p><article class="request-submission" v-for="sub in requestDetail.submissions||[]" :key="sub.studentId"><div class="request-stats"><h3>{{sub.name}} · {{sub.studentId}}</h3><span class="tag">{{sub.status==='approved'?'已通过':sub.status==='needs_fix'?'需要修改':'待审核'}}</span></div><h4>{{sub.activityName}}</h4><p>参与名单：{{sub.participants||'未填写'}}</p><p>活动地点：{{sub.location}} · 时间：{{sub.activityTime}}</p><p>提交时间：{{adminFormatTime(sub.submittedAt)}}</p><p v-if="sub.rejectReason">修改原因：{{sub.rejectReason}}</p><h4>证明材料（图片）</h4><div class="assigned-proof-grid"><div class="img-wrapper" v-for="file in (sub.files||[]).filter(f=>f.kind?.startsWith('image'))" :key="file.name"><credit-assigned-proof :task-id="requestDetail.id" :student-id="sub.studentId" :file="file" @preview="dashboardPreviewSrc=$event"></credit-assigned-proof></div></div><h4>申请附件</h4><div class="request-files"><button class="btn btn-outline" v-for="file in (sub.files||[]).filter(f=>f.kind?.startsWith('attachment'))" :key="file.name" @click="downloadAssigned(requestDetail,sub,file)">下载 {{file.originalName||file.name}}</button><p v-if="!(sub.files||[]).some(f=>f.kind?.startsWith('attachment'))">无附件</p></div></article><p v-if="!(requestDetail.submissions||[]).length" class="empty-state">学生尚未提交材料</p></section></div></section>
+    <!-- 系统安全 -->
+    <div id="tab-maintenance" class="tab-content" :class="{active:activeTab==='maintenance'}">
+      <div class="card">
+        <section class="account-security-panel"><div class="account-security-heading"><div><h2>账户安全管理</h2><p>在线状态按最近心跳判断，设备信息来自登录浏览器。</p></div><button type="button" class="btn btn-outline" @click="loadAccountSecurity(true)" :disabled="accountSecurityLoading">刷新状态</button></div>
+<div class="account-login-policy">
+  <fieldset v-for="kind in ['student','admin']" :key="kind" :disabled="accountPolicyBusy || accountSecurityLoading">
+    <legend>{{kind==='student'?'学生账户':'admin 账户'}}</legend>
+    <div class="account-policy-segments">
+      <button v-for="mode in ['single','multiple']" :key="mode" type="button" :aria-pressed="accountLoginPolicy[kind]===mode" @click="saveAccountLoginPolicy(kind,mode)">{{mode==='single'?'单设备登录':'多设备登录'}}</button>
+    </div>
+  </fieldset>
+</div>
+<p v-if="accountSecurityError" role="alert">{{accountSecurityError}}</p><p v-if="!accountSecurityRows.length" class="empty-state">{{accountSecurityLoading?'正在读取账户…':'暂无账户记录'}}</p>
+<div v-else class="table-wrap"><table><thead><tr><th>用户名</th><th>在线状态</th><th>最近一次登录时间</th><th>登录设备</th><th>账号风险</th><th>账户操作</th></tr></thead><tbody>
+<tr v-for="row in accountSecurityRows" :key="row.kind+':'+row.id"><td><strong>{{row.name}}</strong><br><small>{{row.kind==='student'?'学生 · '+row.id:'管理员'}}{{row.banned?' · 已封禁':''}}</small></td><td><span class="badge" :class="row.banned?'badge-danger':row.online?'badge-success':''">{{row.online&&!row.banned?'设备在线':'设备离线'}}</span></td><td>{{row.loginAt?adminFormatTime(row.loginAt):'无记录'}}</td><td class="account-device">{{row.device||'无记录'}}</td><td class="account-risk-cell"><span class="account-risk-badge" :class="'risk-'+row.risk?.level">{{({low:'低',medium:'中',high:'高'})[row.risk?.level] || '—'}}</span><small v-for="reason in row.risk?.reasons" :key="reason">{{reason}}</small><button v-if="row.risk?.recentDevices?.length" type="button" class="btn btn-outline" @click="accountRiskDetail=row; $nextTick(() => $refs.accountDevicesClose?.focus())">查看设备</button></td><td><div class="account-actions"><button type="button" class="btn btn-outline" :disabled="accountSecurityBusy || row.banned || !row.online" @click="changeAccountSecurity(row,'kick')">强制下线</button><button type="button" class="btn btn-danger" :disabled="accountSecurityBusy" @click="changeAccountSecurity(row,row.banned?'unban':'ban')">{{row.banned?'解除封禁':'账户封禁'}}</button></div></td></tr>
+</tbody></table></div></section>
+<section class="account-security-panel"><div class="account-security-heading"><div><h2>垃圾检测</h2><p>标出信息缺失、疑似广告脚本及同学号同活动名的重复申请，供人工复核。</p></div><button type="button" class="btn btn-outline" @click="scanGarbage" :disabled="garbageBusy">{{garbageBusy?'检测中…':'检测可疑申请'}}</button></div><p v-if="garbageError" role="alert">{{garbageError}}</p><div v-if="garbageReport"><p>疑似记录 {{garbageReport.count}} 条，最多显示 100 条。</p><ul><li v-for="row in garbageReport.findings" :key="row.id">{{row.title}} · {{row.reasons.join('、')}}</li></ul></div></section><h3>冗余数据扫描与清理</h3>
+        <p style="color:#6b7280;font-size:14px;margin-bottom:16px;">
+          冗余数据是指除了<strong>待发放学分（approved）</strong>、<strong>需要修改学分（needs_fix）</strong>、<strong>待审核学分（pending）</strong>之外的所有学分活动数据。
+        </p>
+        <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn btn-primary" @click="invokePageAction('scanRedundantData', $event.currentTarget)">扫描冗余数据</button>
+          <button class="btn btn-danger" @click="invokePageAction('cleanRedundantData', $event.currentTarget)">清理全部冗余数据</button>
+        </div>
+        <div v-if="adminMaintenanceScan" class="stat-grid" id="maintenanceStats">
+          <div class="stat-card"><div class="stat-label">总活动数量</div><div class="stat-value" id="statTotalCount">{{adminMaintenanceScan?.totalCount||0}}</div></div>
+          <div class="stat-card"><div class="stat-label">有效活动数量</div><div class="stat-value" id="statValidCount">{{Math.max(0,(adminMaintenanceScan?.totalCount||0)-(adminMaintenanceScan?.count||0))}}</div></div>
+          <div class="stat-card warning"><div class="stat-label">冗余活动数量</div><div class="stat-value" id="statRedundantCount">{{adminMaintenanceScan?.count||0}}</div></div>
+          <div class="stat-card warning"><div class="stat-label">冗余数据占用</div><div class="stat-value" id="statRedundantSize">{{((adminMaintenanceScan?.sizeBytes||0)/1024).toFixed(2)}}<span class="stat-unit">KB</span></div></div>
+        </div>
+        <div v-if="adminMaintenanceScan" id="redundantListWrap" class="maintenance-results">
+          <h3 style="font-size:16px;font-weight:600;margin-bottom:12px;color:#2a3b5e;">冗余活动列表</h3>
+          <div style="overflow-x:auto;">
+            <table>
+              <thead><tr><th>姓名</th><th>学号</th><th>活动名称</th><th>状态</th><th>创建时间</th></tr></thead>
+              <tbody id="redundantTableBody"><tr v-for="(record,i) in adminMaintenanceScan.apps||[]" :key="record.id||i">
+                  <td>{{record.name||'未知'}}</td><td>{{record.packageName||''}}</td><td>{{record.versionName||''}}</td>
+                  <td><span class="badge badge-danger">{{record.status||'未知'}}</span></td><td>{{adminFormatTime(record.createdAt)}}</td>
+                </tr></tbody>
+            </table>
+          </div>
+          <div v-if="!(adminMaintenanceScan.apps||[]).length" id="redundantEmpty" class="empty-state">没有冗余数据</div>
+        </div>
+      </div>
+    </div>
+
+
+
+    <!-- 登录日志 -->
+    <div id="tab-logs" class="tab-content" :class="{active:activeTab==='logs'}">
+      <div class="card">
+        <h2>登录日志（最近1000条）</h2>
+        <div class="log-table-wrap">
+          <table>
+            <thead><tr><th>用户名</th><th>时间</th><th>IP</th><th>User-Agent</th></tr></thead>
+            <tbody id="logTableBody">
+              <tr v-if="adminLogsLoading"><td colspan="4" class="empty-state">正在读取登录日志…</td></tr>
+              <tr v-else-if="adminLogsError"><td colspan="4" class="empty-state" role="alert">{{adminLogsError}}</td></tr>
+              <tr v-for="(log,i) in adminLogs" :key="i"><td>{{log.username}}</td><td>{{adminFormatTime(log.time)}}</td><td>{{log.ip||'未知'}}</td><td class="log-agent">{{log.userAgent||'未知'}}</td></tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="adminLogsEmpty" id="logEmpty" class="empty-state">暂无登录记录</div>
+        <button class="btn btn-primary" @click="refreshPageAction('loadLogs', $event.currentTarget)" style="margin-top:12px;">刷新</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 真实操作进度。处理中没有取消/关闭按钮；完成或失败后可关闭。 -->
+  <div v-if="adminProgress.open" class="admin-progress-overlay" role="presentation">
+    <div class="admin-progress-dialog" role="dialog" aria-modal="true" aria-labelledby="adminProgressTitle" aria-describedby="adminProgressDetail" tabindex="-1">
+      <div v-if="adminProgress.busy ? adminProgress.scope==='zip' : false">
+        <div class="admin-progress-icon"><span class="admin-progress-spinner" aria-hidden="true"></span></div>
+        <h2 id="adminProgressTitle">正在打包文件…</h2>
+        <p id="adminProgressDetail" class="admin-progress-detail">请稍候，正在依次获取文件并生成 ZIP</p>
+        <div class="admin-progress-track" role="progressbar" :aria-valuenow="adminProgress.percent" aria-valuemin="0" aria-valuemax="100"><div class="admin-progress-fill" :style="{width:adminProgress.percent+'%'}"></div></div>
+        <div class="admin-progress-percent">{{adminProgress.percent}}%</div>
+      </div>
+      <div v-else>
+      <div class="admin-progress-icon" :class="adminProgress.outcome">
+        <span v-if="adminProgress.busy" class="admin-progress-spinner" aria-hidden="true"></span>
+        <span v-else-if="adminProgress.outcome==='success'" aria-hidden="true">✓</span>
+        <span v-else aria-hidden="true">!</span>
+      </div>
+      <h2 id="adminProgressTitle">{{adminProgress.title}}</h2>
+      <p id="adminProgressDetail" class="admin-progress-detail" role="status" aria-live="polite">{{adminProgress.detail}}</p>
+      <div v-if="adminProgress.busy || adminProgress.outcome==='success'" class="admin-progress-track" role="progressbar" :aria-valuenow="adminProgress.indeterminate ? undefined : adminProgress.percent" aria-valuemin="0" aria-valuemax="100" :aria-label="adminProgress.title">
+        <div class="admin-progress-fill" :class="{'is-indeterminate':adminProgress.indeterminate}" :style="adminProgress.indeterminate ? {} : {width:adminProgress.percent+'%'}"></div>
+      </div>
+      <div v-if="adminProgress.busy ? !adminProgress.indeterminate : adminProgress.outcome==='success'" class="admin-progress-percent">{{adminProgress.percent}}%</div>
+      <p v-if="adminProgress.busy" class="admin-progress-warning">正在处理，请勿重复操作或关闭页面</p>
+      <button v-else type="button" class="btn btn-primary admin-progress-close" @click="closeAdminProgress()">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 提交状态弹窗 -->
+  <div v-if="adminSubmissionOpen" class="modal-overlay show" id="submissionModal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h2>提交状态</h2>
+        <button class="modal-close" @click="invokePageAction('closeSubmissionModal')">×</button>
+      </div>
+      <div class="modal-tabs">
+        <button id="tabSubmittedBtn" class="submission-tab" :class="{active:adminSubmissionTab==='submitted'}" @click="invokePageAction('switchSubmissionTab', 'submitted')">已交 ({{adminSubmissionRows.submitted.length}})</button>
+        <button id="tabNotSubmittedBtn" class="submission-tab" :class="{active:adminSubmissionTab==='notSubmitted'}" @click="invokePageAction('switchSubmissionTab', 'notSubmitted')">未交 ({{adminSubmissionRows.notSubmitted.length}})</button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-toolbar">
+          <button class="btn btn-primary btn-small" :disabled="adminExcelExportBusy || !adminSubmissionReady || !adminSubmissionVisible.length" @click="invokePageAction('exportSubmissionExcel', $event.currentTarget)">{{adminExcelExportBusy?'正在导出…':'导出 Excel'}}</button>
+          <button class="btn btn-outline btn-small" @click="refreshPageAction('refreshSubmissionData', $event.currentTarget)">刷新</button>
+          <span class="submission-sync-label" id="submissionSyncState" role="status" aria-live="polite">{{adminExcelExportResult || adminSubmissionStatus}}</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table>
+            <thead id="submissionThead"><tr v-if="adminSubmissionTab==='submitted'"><th>姓名</th><th>学号</th><th>提交次数</th><th>文件数</th><th>最近提交</th></tr>
+              <tr v-else><th>姓名</th><th>学号</th></tr></thead>
+            <tbody id="submissionTbody">
+              <tr v-if="!adminSubmissionReady"><td :colspan="adminSubmissionTab==='submitted'?5:2" class="empty-state">正在加载学生及上传记录，请稍候…</td></tr>
+              <tr v-else v-for="(row,i) in adminSubmissionVisible" :key="row.studentId+'-'+i">
+                <td>{{row.name}}</td><td>{{row.studentId}}</td>
+                <template v-if="adminSubmissionTab==='submitted'"><td>{{row.count}}</td><td>{{row.fileCount}}</td><td>{{adminFormatTime(row.lastTime)}}</td></template>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div v-if="adminSubmissionReady && !adminSubmissionVisible.length" id="submissionEmpty" class="empty-state">暂无数据</div>
+        <div class="submission-last-update" id="submissionUpdatedAt" aria-live="polite">{{adminSubmissionUpdatedAt ? '列表快照：'+adminFormatTime(adminSubmissionUpdatedAt) : ''}}</div>
+      </div>
+    </div>
+  </div>
+
+  
+<div v-if="dashboardPreviewSrc" class="assigned-proof-viewer" role="dialog" aria-modal="true" aria-label="证明图片预览" @click.self="dashboardPreviewSrc=''" @keydown.esc="dashboardPreviewSrc=''"><img :src="dashboardPreviewSrc" alt="证明图片大图"><button type="button" aria-label="关闭图片预览" @click="dashboardPreviewSrc=''">×</button></div>
+
+<div v-if="fileTaskDetailOpen" class="file-task-modal-overlay audit-modal-overlay show" @click.self="fileTaskDetailClose" @keydown.esc="fileTaskDetailClose">
+<section class="file-task-modal file-task-detail-modal audit-modal-card" role="dialog" aria-modal="true" aria-labelledby="file-task-detail-title" tabindex="-1" ref="fileTaskDetailDialog">
+<header class="file-task-modal-heading audit-modal-header"><h2 id="file-task-detail-title">{{fileTasks.find(t=>t.id===fileManageTask)?.title||'历史上传'}}</h2><button type="button" class="audit-modal-close" aria-label="关闭任务窗口" :disabled="adminUploadSaving || fileActionBusy" @click="fileTaskDetailClose">×</button></header><div v-if="fileTaskId" class="task-delete-toolbar"><button type="button" class="btn btn-danger" :disabled="fileActionBusy || adminUploadSaving" @click="deleteFileTask(fileTasks.find(t=>t.id===fileTaskId))">删除任务</button></div>
+<section v-if="isSystem && fileTaskId && fileManageTask!=='legacy' && !fileTaskCreateOpen" class="file-task-editor"><h3>任务设置</h3><fieldset class="admin-setting-fieldset"><legend>接收学生</legend><div class="admin-settings-actions"><label class="admin-radio-option"><input type="radio" v-model="fileTaskAudience" value="all">全班发送</label><label class="admin-radio-option"><input type="radio" v-model="fileTaskAudience" value="selected">指定学生</label></div><div v-if="fileTaskAudience==='selected'"><input class="form-control" v-model.trim="fileTaskStudentSearch" placeholder="搜索姓名或学号"><p v-if="fileTaskStudentsLoading">正在加载学生…</p><p v-if="fileTaskStudentsError" role="alert">{{fileTaskStudentsError}} <button type="button" class="btn btn-outline" @click="loadFileTaskStudents">重试</button></p><div class="file-task-recipient-list"><label v-for="student in fileTaskStudents.filter(s=>!fileTaskStudentSearch || (s.name+' '+s.studentId).includes(fileTaskStudentSearch))" :key="student.studentId"><input type="checkbox" v-model="fileTaskRecipients[student.studentId]">{{student.name}} · {{student.studentId}}</label></div><p>已选 {{Object.values(fileTaskRecipients).filter(Boolean).length}} 人</p></div><p v-else class="admin-muted">发送给全班所有未封禁学生</p></fieldset><fieldset class="admin-setting-fieldset file-task-requirement"><legend>上传要求弹窗</legend><label class="admin-radio-option"><input type="checkbox" v-model="fileTaskRequirementEnabled">进入此任务时显示上传要求</label><label class="form-group">弹窗内容<textarea class="form-control" v-model="fileTaskRequirementMessage" rows="5" maxlength="4000" placeholder="填写此任务的文件格式、命名方式等上传要求"></textarea></label><p class="admin-muted">仅进入此任务上传页面时显示，进入文件任务列表不弹出。</p></fieldset><label>任务名称<input class="form-control" v-model.trim="fileTaskTitle" maxlength="100"></label><label>任务说明<textarea class="form-control" v-model="fileTaskDescription"></textarea></label><p v-if="fileTaskError" role="alert">{{fileTaskError}}</p>
+        <div class="admin-settings-actions">
+          <label>任务上传状态：</label>
+          <button id="toggleFileUploadBtn" class="btn" :class="adminUploadEnabled?'btn-danger':'btn-success'" @click="adminUploadEnabled=!adminUploadEnabled">{{adminUploadEnabled?'关闭':'开启'}}</button>
+          <span id="fileUploadStatus" class="admin-setting-status" :class="adminUploadEnabled?'state-on':'state-off'">当前：{{adminUploadEnabled?'开启':'关闭'}}</span>
+        </div>
+        <div class="admin-settings-actions">
+          <label>允许多文件上传：</label>
+          <button id="toggleMultipleBtn" class="btn" :class="adminUploadMultiple?'btn-danger':'btn-success'" @click="adminUploadMultiple=!adminUploadMultiple">{{adminUploadMultiple?'禁止':'允许'}}</button>
+          <span id="multipleStatus" class="admin-setting-status" :class="adminUploadMultiple?'state-on':'state-off'">当前：{{adminUploadMultiple?'允许':'禁止'}}</span>
+        </div>
+        <div class="form-group">
+          <p class="form-note">每位学生只能提交一次，可按任务设置一次上传多个文件。</p>
+        </div>
+        <fieldset class="admin-setting-fieldset">
+          <legend>单个文件大小限制</legend>
+          <div class="admin-settings-actions">
+            <label v-for="opt in ['20','50','100','custom']" :key="opt" class="admin-radio-option"><input type="radio" name="fileSizeMode" :value="opt" v-model="adminUploadFileSizeMode">{{opt==='custom'?'自定义':opt+'MB'}}</label>
+            <input v-if="adminUploadFileSizeMode==='custom'" type="number" id="customFileSize" v-model.number="adminUploadCustomSize" min="1" step="1" class="admin-number-small" aria-label="自定义文件大小 MB" />
+          </div>
+          <div id="fileSizePreview" class="admin-muted" aria-live="polite">{{adminUploadFileSizePreview}}</div>
+        </fieldset>
+        <fieldset class="admin-setting-fieldset">
+          <legend>上传截止时间</legend>
+          <div class="admin-settings-actions">
+            <label class="admin-radio-option"><input type="radio" name="deadlineMode" value="none" v-model="adminUploadDeadlineMode">不限制</label>
+            <label class="admin-radio-option"><input type="radio" name="deadlineMode" value="duration" v-model="adminUploadDeadlineMode">按时长</label>
+            <label class="admin-radio-option"><input type="radio" name="deadlineMode" value="date" v-model="adminUploadDeadlineMode">按日期时间</label>
+          </div>
+          <div v-if="adminUploadDeadlineMode==='duration'" id="durationInputs" class="admin-settings-actions">
+            <label>时 <input type="number" id="deadlineHours" v-model.number="adminUploadHours" min="0" step="1" class="admin-number-small"></label>
+            <label>分 <input type="number" id="deadlineMinutes" v-model.number="adminUploadMinutes" min="0" max="59" step="1" class="admin-number-small"></label>
+            <label>秒 <input type="number" id="deadlineSeconds" v-model.number="adminUploadSeconds" min="0" max="59" step="1" class="admin-number-small"></label>
+          </div>
+          <div v-if="adminUploadDeadlineMode==='date'" id="dateInput">
+            <input type="datetime-local" id="deadlineDate" v-model="adminUploadDate" class="form-control" aria-label="截止日期时间" />
+          </div>
+          <div id="deadlinePreview" class="admin-muted" aria-live="polite">{{adminUploadDeadlinePreview}}</div>
+        </fieldset>
+        <button class="btn btn-primary" :disabled="adminUploadSaving" @click="invokePageAction('saveFileUploadSettings', $event.currentTarget)">{{adminUploadSaving?'保存中…':(fileTaskId?'保存任务设置':'发布上传任务')}}</button>
+        <div v-if="adminUploadSaveResult" id="fileUploadSaveResult" class="admin-vue-result" :class="adminUploadSaveError?'admin-result-error':''" role="status">{{adminUploadSaveResult}}</div></section><h3>任务文件列表</h3>
+        <div style="margin-bottom:12px;display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
+          <button class="btn btn-primary" @click="refreshPageAction('loadUploads', $event.currentTarget)">刷新</button><button class="btn btn-danger" :disabled="fileActionBusy || !fileSelectedCount" @click="invokePageAction('deleteSelectedUploads', $event.currentTarget)">批量删除（{{fileSelectedCount}}）</button><label><input type="checkbox" @change="fileSelectAll($event.target.checked)"> 全选</label>
+          <button class="btn btn-success" :disabled="adminProgress.busy" @click="invokePageAction('downloadAllZip', $event.currentTarget)">打包下载全部</button>
+          <button class="btn btn-warning" @click="invokePageAction('openSubmissionModal')">提交状态</button>
+          <span class="refresh-indicator" id="fileRefreshIndicator" style="display:none;"><span class="dot"></span>实时刷新中</span>
+        </div>
+        <div class="uploaded-files-scroll" role="region" aria-label="已上传文件列表" tabindex="0">
+          <table class="uploaded-files-table">
+            <thead><tr><th>选择</th><th>姓名</th><th>学号</th><th>文件名</th><th>上传时间</th><th>操作</th></tr></thead>
+            <tbody id="uploadTableBody">
+              <tr v-if="fileLoading ? fileManageRows.length===0 : false"><td colspan="6" class="empty-state">正在读取上传文件…</td></tr>
+              <tr v-else-if="fileError"><td colspan="6" class="empty-state" role="alert">{{fileError}}</td></tr>
+              <tr v-for="(r,i) in fileManageRows" :key="r.id+'-'+i">
+                <td><input type="checkbox" :checked="!!fileSelected[r.id]" @change="fileSelect(r.id,$event.target.checked)"></td><td>{{r.name || ''}}</td><td>{{r.studentId || ''}}</td>
+                <td><a class="file-link uploaded-file-name" :href="r.url" target="_blank" rel="noopener">{{r.displayName}}</a></td>
+                <td>{{r.displayTime}}</td>
+                <td class="uploaded-file-action-cell"><div class="uploaded-file-actions">
+                    <a class="btn btn-primary btn-small uploaded-file-action" :href="r.url" download>下载</a>
+                    <button type="button" class="btn btn-danger btn-small uploaded-file-action" :disabled="fileActionBusy" @click="invokePageAction('deleteUpload', $event.currentTarget, r.id)">删除记录</button>
+                </div></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div id="uploadEmpty" v-if="fileManageRows.length===0 ? !fileLoading ? !fileError : false : false" class="empty-state">暂无上传记录</div>
+</section></div>
+<div v-if="fileTaskCreateOpen" class="file-task-modal-overlay audit-modal-overlay show" @keydown.esc="fileTaskCreateClose" @click.self="fileTaskCreateClose">
+  <section class="file-task-modal audit-modal-card" role="dialog" aria-modal="true" aria-labelledby="file-task-create-title" tabindex="-1" ref="fileTaskCreateDialog">
+    <header class="file-task-modal-heading audit-modal-header"><h2 id="file-task-create-title">创建文件上传任务</h2><button type="button" class="audit-modal-close" aria-label="关闭创建任务窗口" :disabled="adminUploadSaving" @click="fileTaskCreateClose">×</button></header>
+    <p>设置接收范围及任务要求后发布，接收学生将收到新任务消息。</p>
+<fieldset class="admin-setting-fieldset"><legend>接收学生</legend><div class="admin-settings-actions"><label class="admin-radio-option"><input type="radio" v-model="fileTaskAudience" value="all">全班发送</label><label class="admin-radio-option"><input type="radio" v-model="fileTaskAudience" value="selected">指定学生</label></div><div v-if="fileTaskAudience==='selected'"><input class="form-control" v-model.trim="fileTaskStudentSearch" placeholder="搜索姓名或学号"><p v-if="fileTaskStudentsLoading">正在加载学生…</p><p v-if="fileTaskStudentsError" role="alert">{{fileTaskStudentsError}} <button type="button" class="btn btn-outline" @click="loadFileTaskStudents">重试</button></p><div class="file-task-recipient-list"><label v-for="student in fileTaskStudents.filter(s=>!fileTaskStudentSearch || (s.name+' '+s.studentId).includes(fileTaskStudentSearch))" :key="student.studentId"><input type="checkbox" v-model="fileTaskRecipients[student.studentId]">{{student.name}} · {{student.studentId}}</label></div><p>已选 {{Object.values(fileTaskRecipients).filter(Boolean).length}} 人</p></div><p v-else class="admin-muted">发送给全班所有未封禁学生</p></fieldset><fieldset class="admin-setting-fieldset file-task-requirement"><legend>上传要求弹窗</legend><label class="admin-radio-option"><input type="checkbox" v-model="fileTaskRequirementEnabled">进入此任务时显示上传要求</label><label class="form-group">弹窗内容<textarea class="form-control" v-model="fileTaskRequirementMessage" rows="5" maxlength="4000" placeholder="填写此任务的文件格式、命名方式等上传要求"></textarea></label><p class="admin-muted">仅进入此任务上传页面时显示，进入文件任务列表不弹出。</p></fieldset><label>任务名称<input class="form-control" v-model.trim="fileTaskTitle" maxlength="100"></label><label>任务说明<textarea class="form-control" v-model="fileTaskDescription"></textarea></label><p v-if="fileTaskError" role="alert">{{fileTaskError}}</p>
+        <div class="admin-settings-actions">
+          <label>任务上传状态：</label>
+          <button id="toggleFileUploadBtn" class="btn" :class="adminUploadEnabled?'btn-danger':'btn-success'" @click="adminUploadEnabled=!adminUploadEnabled">{{adminUploadEnabled?'关闭':'开启'}}</button>
+          <span id="fileUploadStatus" class="admin-setting-status" :class="adminUploadEnabled?'state-on':'state-off'">当前：{{adminUploadEnabled?'开启':'关闭'}}</span>
+        </div>
+        <div class="admin-settings-actions">
+          <label>允许多文件上传：</label>
+          <button id="toggleMultipleBtn" class="btn" :class="adminUploadMultiple?'btn-danger':'btn-success'" @click="adminUploadMultiple=!adminUploadMultiple">{{adminUploadMultiple?'禁止':'允许'}}</button>
+          <span id="multipleStatus" class="admin-setting-status" :class="adminUploadMultiple?'state-on':'state-off'">当前：{{adminUploadMultiple?'允许':'禁止'}}</span>
+        </div>
+        <div class="form-group">
+          <p class="form-note">每位学生只能提交一次，可按任务设置一次上传多个文件。</p>
+        </div>
+        <fieldset class="admin-setting-fieldset">
+          <legend>单个文件大小限制</legend>
+          <div class="admin-settings-actions">
+            <label v-for="opt in ['20','50','100','custom']" :key="opt" class="admin-radio-option"><input type="radio" name="fileSizeMode" :value="opt" v-model="adminUploadFileSizeMode">{{opt==='custom'?'自定义':opt+'MB'}}</label>
+            <input v-if="adminUploadFileSizeMode==='custom'" type="number" id="customFileSize" v-model.number="adminUploadCustomSize" min="1" step="1" class="admin-number-small" aria-label="自定义文件大小 MB" />
+          </div>
+          <div id="fileSizePreview" class="admin-muted" aria-live="polite">{{adminUploadFileSizePreview}}</div>
+        </fieldset>
+        <fieldset class="admin-setting-fieldset">
+          <legend>上传截止时间</legend>
+          <div class="admin-settings-actions">
+            <label class="admin-radio-option"><input type="radio" name="deadlineMode" value="none" v-model="adminUploadDeadlineMode">不限制</label>
+            <label class="admin-radio-option"><input type="radio" name="deadlineMode" value="duration" v-model="adminUploadDeadlineMode">按时长</label>
+            <label class="admin-radio-option"><input type="radio" name="deadlineMode" value="date" v-model="adminUploadDeadlineMode">按日期时间</label>
+          </div>
+          <div v-if="adminUploadDeadlineMode==='duration'" id="durationInputs" class="admin-settings-actions">
+            <label>时 <input type="number" id="deadlineHours" v-model.number="adminUploadHours" min="0" step="1" class="admin-number-small"></label>
+            <label>分 <input type="number" id="deadlineMinutes" v-model.number="adminUploadMinutes" min="0" max="59" step="1" class="admin-number-small"></label>
+            <label>秒 <input type="number" id="deadlineSeconds" v-model.number="adminUploadSeconds" min="0" max="59" step="1" class="admin-number-small"></label>
+          </div>
+          <div v-if="adminUploadDeadlineMode==='date'" id="dateInput">
+            <input type="datetime-local" id="deadlineDate" v-model="adminUploadDate" class="form-control" aria-label="截止日期时间" />
+          </div>
+          <div id="deadlinePreview" class="admin-muted" aria-live="polite">{{adminUploadDeadlinePreview}}</div>
+        </fieldset>
+        <button class="btn btn-primary" :disabled="adminUploadSaving" @click="invokePageAction('saveFileUploadSettings', $event.currentTarget)">{{adminUploadSaving?'保存中…':(fileTaskId?'保存任务设置':'发布上传任务')}}</button>
+        <div v-if="adminUploadSaveResult" id="fileUploadSaveResult" class="admin-vue-result" :class="adminUploadSaveError?'admin-result-error':''" role="status">{{adminUploadSaveResult}}</div>
+  </section>
+</div>
+<div v-if="accountRiskDetail" class="audit-modal-overlay show" @click.self="accountRiskDetail=null" @keydown.esc="accountRiskDetail=null">
+<section class="audit-modal-card" role="dialog" aria-modal="true" aria-labelledby="account-device-title">
+<header class="audit-modal-header"><h2 id="account-device-title">{{accountRiskDetail.name}}的近期登录设备</h2><button class="audit-modal-close" type="button" ref="accountDevicesClose" aria-label="关闭" @click="accountRiskDetail=null">×</button></header>
+<p>最近 24 小时内有记录的浏览器设备。</p>
+<ul class="account-device-history"><li v-for="(device,index) in accountRiskDetail.risk.recentDevices" :key="index"><strong>{{device.name}}</strong><span>{{adminFormatTime(device.seenAt)}}</span><span v-if="device.isNew" class="account-risk-badge risk-medium">近期新设备</span></li></ul>
+</section></div>
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

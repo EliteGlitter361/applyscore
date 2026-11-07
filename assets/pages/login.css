@@ -1,0 +1,71 @@
+
+    :root {
+      --bg: #f0f2f5; --card-bg: #ffffff; --primary: #4f6ef7;
+      --text: #1a1a2e; --border: #e5e7eb;
+      --shadow-lg: 0 10px 25px rgba(0,0,0,0.08);
+      --radius: 16px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', sans-serif;
+      background: var(--bg); color: var(--text);
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 20px;
+    }
+    .login-card {
+      background: var(--card-bg); padding: 40px;
+      border-radius: var(--radius); box-shadow: var(--shadow-lg);
+      width: 100%; max-width: 400px;
+    }
+    h2 { text-align: center; margin-bottom: 24px; }
+    .form-group { margin-bottom: 18px; }
+    label { display: block; font-weight: 600; margin-bottom: 5px; }
+    input {
+      width: 100%; padding: 11px 14px; border: 2px solid var(--border);
+      border-radius: 10px; font-size: 0.95rem; font-family: inherit;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    input:focus {
+      border-color: var(--primary); outline: none;
+      box-shadow: 0 0 0 4px rgba(79,110,247,0.12);
+    }
+    .btn {
+      width: 100%; padding: 13px; background: var(--primary); color: #fff;
+      border: none; border-radius: 28px; font-weight: 700; cursor: pointer;
+      font-size: 1rem; margin-top: 8px; font-family: inherit;
+      display: inline-flex; align-items: center; justify-content: center;
+      transition: background 0.2s, transform 0.08s;
+    }
+    .btn:hover:not(:disabled) { background: #3b54d4; }
+    .btn:disabled { opacity: 0.75; cursor: not-allowed; }
+
+    .error {
+      background: #fef2f2; color: #991b1b; padding: 12px;
+      border-radius: 8px; margin-bottom: 16px;
+      animation: shakeIn 0.4s ease;
+    }
+    @keyframes shakeIn {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-6px); }
+      75% { transform: translateX(6px); }
+    }
+    .create-system { text-align: center; margin-top: 12px; }
+    .create-system a { color: var(--primary); font-weight: 700; text-decoration: underline; }
+    .btn-back {
+      background: none; border: none; font-size: 18px; font-weight: 500;
+      color: #2a6df4; cursor: pointer; padding: 6px 12px 6px 4px;
+      border-radius: 40px; display: inline-flex; align-items: center; gap: 6px;
+      transition: background 0.2s; text-decoration: none; font-family: inherit;
+    }
+    .btn-back:hover { background: rgba(42,109,244,0.08); }
+    .btn-back svg { width: 24px; height: 24px; }
+    .back-row { text-align: center; margin-top: 16px; }
+
+    @media (max-width: 480px) {
+      .login-card { padding: 24px 18px; border-radius: 12px; }
+      h2 { font-size: 20px; }
+      input { padding: 10px 12px; font-size: 0.9rem; }
+      .btn { padding: 12px; font-size: 0.95rem; }
+      .btn-back { font-size: 16px; }
+    }
+  

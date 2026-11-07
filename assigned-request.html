@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN" data-page="assigned-request">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.6.0"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.9.45"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>管理员发放的申请 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="modulepreload" href="/assets/controllers/assigned-request.mjs?v=3.9.45">
+  <link rel="stylesheet" href="/assets/pages/assigned-request.css?v=3.9.45"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.9.45">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.9.45"></script>
+  <script defer src="/sync.js?v=3.9.45"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=3.9.45"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  
+  <script defer src="/assets/app.js?v=3.9.56"></script>
+<meta name="application-version" content="3.9.45"></head>
+<body class="page-assigned-request">
+
+
+  <div id="app"></div>
+  <template id="page-template">
+  <div class="container assigned-window">
+    <div class="assigned-window-heading">
+      <button type="button" class="btn assigned-window-back" @click="assignedPageApi.back()" title="返回申请列表" aria-label="返回申请列表"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m15 18-6-6 6-6"/></svg></button>
+      <h1>管理员发放的申请</h1>
+    </div>
+    <div class="card assigned-window-card">
+      <div v-if="assignedPageLoading" class="empty-state" role="status">正在读取申请…</div>
+      <div v-else-if="assignedPageError" class="empty-state" role="alert">{{assignedPageError}} <button class="btn btn-outline" type="button" @click="assignedPageApi.reload()">重试</button></div>
+      <div v-else-if="assignedPageTask">
+        <h2>{{assignedPageTask.title}}</h2>
+        <p v-if="assignedPageTask.description" class="assigned-description">{{assignedPageTask.description}}</p>
+        <p class="request-deadline">{{assignedPageTask.expired?'已过期':assignedPageTask.expiresAt?'截止：'+new Date(assignedPageTask.expiresAt).toLocaleString('zh-CN'):'无截止时间'}}</p>
+        <article v-if="assignedPageTask.submitted && assignedPageTask.submission.status!=='needs_fix'" class="request-submission"><h3>{{assignedPageTask.submission.status==='approved'?'审核已通过':'已提交，等待管理员审核'}}</h3><p>活动名称：{{assignedPageTask.submission.activityName}}</p><p>参与名单：{{assignedPageTask.submission.participants||'未填写'}}</p><p>活动地点：{{assignedPageTask.submission.location}}</p><p>提交时间：{{creditSubmissionTime(assignedPageTask.submission)}}</p><p>已提交材料：{{(assignedPageTask.submission.files||[]).map(f=>f.originalName||f.name).join('、')}}</p></article>
+        <div v-else-if="assignedPageTask.expired && assignedPageTask.submission?.status!=='needs_fix'" class="empty-state">申请已过期，无法提交</div>
+        <form v-else class="assigned-request-form" @submit.prevent="assignedPageApi.submit()">
+          <p v-if="assignedPageTask.submission?.rejectReason" class="vue-rejection">修改原因：{{assignedPageTask.submission.rejectReason}}。请修改信息并重新上传完整材料。</p><div class="form-group"><label for="assigned-activity">活动名称 <span class="required">*</span></label><input id="assigned-activity" class="form-control" v-model.trim="assignedPageForm.activityName" required></div>
+          <div class="form-group"><label for="assigned-people">活动参与名单</label><textarea id="assigned-people" class="form-control" rows="3" v-model.trim="assignedPageForm.participants"></textarea></div>
+          <div class="form-row"><div class="form-group"><label for="assigned-location">活动地点 <span class="required">*</span></label><input id="assigned-location" class="form-control" v-model.trim="assignedPageForm.location" required></div></div>
+          <div class="form-group"><label for="assigned-proof">活动证明图片 <span class="required">*</span></label><input id="assigned-proof" class="form-control" type="file" accept="image/*" multiple required @change="assignedPageForm.images=Array.from($event.target.files||[])"></div>
+          <div class="form-group"><label for="assigned-attachment">申请附件 {{assignedPageTask.attachmentRequired?'（必填）':'（选填）'}}</label><input id="assigned-attachment" class="form-control" type="file" :required="assignedPageTask.attachmentRequired" @change="assignedPageForm.attachment=$event.target.files[0]||null"></div>
+          <p v-if="assignedPageForm.error" class="form-validation-hint" role="alert">{{assignedPageForm.error}}</p>
+          <button type="submit" class="btn btn-primary assigned-submit" :disabled="assignedPageForm.busy">{{assignedPageForm.busy?'正在提交…':'提交申请'}}</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

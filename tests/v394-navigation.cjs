@@ -1,0 +1,11 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),root=require('path').resolve(__dirname,'..');
+(async()=>{
+const source=fs.readFileSync(root+'/assets/controllers/assigned-request.mjs','utf8').replace('export function mount','function mount');let target='',animated=0;
+const task={id:'req1',title:'aaa',submitted:true,submission:{studentId:'system',name:'system',status:'pending',activityName:'aaa',files:[]}};
+const state={assignedPageForm:{},assignedPageApi:{},assignedPageTask:null,assignedPageLoading:true};
+const ctx={console,URLSearchParams,location:{search:'?id=req1',replace:url=>target=url},localStorage:{getItem:()=> 'student-jwt-system'},fetch:async()=>Response.json([task]),window:{CreditRouteGuard:{navigateAway:()=>animated++}}};vm.createContext(ctx);vm.runInContext(source,ctx);const cleanup=ctx.mount(state);await new Promise(setImmediate);assert(target.includes('/detail.html?id=assigned%3Areq1%3Asystem'));assert.equal(animated,0);assert.equal(state.assignedPageTask.title,'aaa');assert.equal(state.assignedPageLoading,false);cleanup();
+const index=fs.readFileSync(root+'/index.html','utf8');assert(index.includes("task.submitted && task.submission ? '/detail.html?id='"));
+// Reproduce a controller initiating navigation before the document's first pageshow.
+const guard=fs.readFileSync(root+'/assets/route-guard.js','utf8'),start=guard.indexOf("window.addEventListener('pageshow', ")+"window.addEventListener('pageshow', ".length,end=guard.indexOf('\n  });',start);let clears=0;const guardCtx={window:{__routeNavigationPending:true,location:{href:'https://test/index.html',pathname:'/index.html'}},clearOldLeavingState:()=>clears++,destination:()=>null,document:{documentElement:{classList:{contains:()=>false}},querySelector:()=>null},normalizePath:x=>x};const onShow=vm.runInNewContext('('+guard.slice(start,end)+'\n  })',guardCtx);onShow({persisted:false});assert.equal(clears,0,'initial pageshow must not cancel a pending navigation');onShow({persisted:true});assert.equal(clears,1,'bfcache restore must still reset stale navigation');
+console.log('PASS submitted card direct detail link, legacy pending link without empty state, immediate redirect and initial pageshow navigation race');
+})().catch(e=>{console.error(e);process.exitCode=1});

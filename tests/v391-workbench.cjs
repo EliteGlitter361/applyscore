@@ -1,0 +1,17 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path'),root=path.resolve(__dirname,'..');
+(async()=>{
+const source=fs.readFileSync(root+'/assets/app.js','utf8');
+const computed=vm.runInNewContext('({'+source.split('    computed:{')[1].split('    methods: {')[0].replace(/},\s*$/,'')+'})',{page:'index'});
+const task={id:'r1',title:'志愿活动',submitted:true,submission:{status:'approved',studentId:'1',name:'甲'}};
+let state={indexTab:'pending',indexSearchReady:'',indexPublishedTasks:[task],indexAssignedTasks:[]};
+assert.equal(computed.assignedStatusTasks.call(state).length,1,'approved task visible while logged out');
+state.indexTab='needs-fix';assert.equal(computed.assignedStatusTasks.call(state).length,0);
+state.indexAssignedTasks=[{...task,submission:{...task.submission,status:'needs_fix'}}];assert.equal(computed.assignedStatusTasks.call(state).length,1);
+state={indexTab:'pending',indexSearchReady:'',indexUser:null,indexApps:[{id:'normal',status:'approved',createdAt:20,versionName:'普通'}],assignedStatusTasks:[{...task,submission:{...task.submission,activityTime:'2026-11-02T10:00',submittedAt:10}}]};const merged=computed.visibleIndexApps.call(state);assert.deepEqual(Array.from(merged,a=>a.id),['normal','assigned:r1:1']);assert.equal(merged[1].publisher,'2026-11-02 10:00');assert.equal(merged[1].assigned,true);
+const index=fs.readFileSync(root+'/index.html','utf8'),admin=fs.readFileSync(root+'/admin.html','utf8');assert(!index.includes("indexToggleTab('review')"));assert(!index.includes('v-for="task in assignedStatusTasks"'));assert(index.includes('assigned-credit-card'));assert(index.includes("'/detail.html?id='+encodeURIComponent(app.id)"));assert(!admin.includes('reviewAssigned('));assert(admin.includes('request-window-close'));assert(admin.includes('@submit.prevent="createAssignedRequest"'));
+const taskData={id:'r1',title:'测试任务',submissions:[{studentId:'1',name:'甲',activityName:'测试活动',status:'pending',submittedAt:123}]};let mutation;
+const stateVm={isSystem:false,dashboardApps:[],dashboardSelected:{},dashboardCanAudit:false,dashboardCanBan:false,dashboardBusy:false,dashboardActiveTab:'assigned',dashboardAssigned:[]};
+const ctx={setInterval:()=>1,clearInterval(){},console,localStorage:{getItem:k=>k==='adminToken'?'fake-jwt-admin':'{}',setItem(){}},document:{addEventListener(){},removeEventListener(){}},window:{apiCache:{get:async url=>url.includes('my-permissions')?{auditPermission:1,assignedPermission:true}:url==='/api/requests'?[taskData]:[],invalidate(){}},syncBus:{on:()=>()=>{},emit(){}},flashSuccess(){}},fetch:async(url,options)=>{mutation={url,...options};return Response.json({message:'ok'})},URL};vm.createContext(ctx);vm.runInContext(fs.readFileSync(root+'/assets/controllers/dashboard.mjs','utf8').replace('export function mount','function mount'),ctx);const cleanup=ctx.mount(stateVm);await new Promise(setImmediate);await stateVm._dashboardApi.loadAssigned();assert.equal(stateVm.dashboardAssigned.length,1);stateVm.dashboardModalApp=stateVm.dashboardAssigned[0];await stateVm._dashboardApi.review('approve');assert.equal(mutation.url,'/api/requests');assert.equal(mutation.method,'PATCH');assert.equal(JSON.parse(mutation.body).status,'approved');assert.equal(stateVm.dashboardModalApp,null);cleanup();
+console.log('PASS approved homepage visibility, no extra homepage tab, Vue compose form, read-only admin details, workbench load and review routing');
+})().catch(e=>{console.error(e);process.exitCode=1});
+

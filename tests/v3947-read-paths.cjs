@@ -1,0 +1,21 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert');
+const src=f=>fs.readFileSync(__dirname+'/../functions/api/'+f,'utf8').replace(/^import[^\r\n]*\r?\n/gm,'').replace(/export /g,'');
+let reads=[];
+const ctx={Request,Response,URL,console,getAccountJson:async()=>{reads.push('admins');throw Error('duplicate roster lookup');},getFileFromGitee:async(e,p)=>{reads.push(p);return {content:p==='data/students.json'?[{studentId:'1',name:'A'}]:[]};},receivesFileTask:()=>true};
+vm.createContext(ctx);
+vm.runInContext(src('admin.js')+';this.admin=onRequest;',ctx);
+vm.runInContext(src('file-tasks.js')+';this.tasks=onRequest;',ctx);
+const admin={username:'system',role:'system',password:'private'};
+const invoke=(handler,path,token,kind,id,account)=>ctx[handler]({request:new Request('https://test'+path,{headers:{Authorization:'Bearer '+token}}),env:{},data:{accountSession:{state:'online',row:{kind,id},account,accounts:[account]}}});
+(async()=>{
+ let r=await invoke('admin','/api/admin?action=my-permissions','fake-jwt-system','admin','system',admin);
+ assert.equal(r.status,200);assert.equal((await r.json()).role,'system');assert.equal(reads.length,0);
+ r=await invoke('admin','/api/admin','fake-jwt-system','admin','system',admin);
+ assert.equal(r.status,200);assert(!(await r.text()).includes('private'));assert.equal(reads.length,0);
+ r=await invoke('tasks','/api/file-tasks?scope=students','fake-jwt-system','admin','system',admin);
+ assert.equal(r.status,200);assert.deepEqual(reads,['data/students.json']);
+ reads=[];
+ r=await invoke('tasks','/api/file-tasks','student-jwt-1','student','1',{studentId:'1'});
+ assert.equal(r.status,200);assert.deepEqual(reads,['data/file-tasks.json']);
+ console.log('PASS authenticated read paths skip duplicate upstream calls and keep response redaction');
+})().catch(e=>{console.error(e);process.exitCode=1;});

@@ -1,0 +1,50 @@
+
+    /* 样式同之前，保持不变 */
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: 'Segoe UI', 'PingFang SC', sans-serif; background: #f0f4ff; min-height:100vh; padding:20px; }
+    .navbar { max-width:1000px; margin:0 auto 28px; background:rgba(255,255,255,0.8); backdrop-filter:blur(12px); border-radius:40px; padding:12px 28px; display:flex; align-items:center; justify-content:space-between; box-shadow:0 4px 20px rgba(0,0,0,0.04); border:1px solid rgba(255,255,255,0.4); }
+    .navbar h1 { font-size:24px; font-weight:700; color:#0b1e3a; }
+    .nav-actions { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .btn { padding:8px 20px; border-radius:40px; font-weight:600; text-decoration:none; border:none; cursor:pointer; font-size:14px; }
+    .btn-outline { background:transparent; color:#2a6df4; border:2px solid #2a6df4; }
+    .btn-outline:hover { background:#2a6df4; color:#fff; }
+    .btn-logout { background:#e53e3e; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-primary { background:#2a6df4; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-danger { background:#ef4444; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .btn-success { background:#10b981; color:#fff; border:none; padding:8px 20px; border-radius:40px; font-weight:600; cursor:pointer; }
+    .container { max-width:1000px; margin:0 auto; }
+    .card { background:rgba(255,255,255,0.85); backdrop-filter:blur(8px); border-radius:28px; padding:24px; border:1px solid rgba(255,255,255,0.5); box-shadow:0 4px 16px rgba(0,0,0,0.04); margin-bottom:20px; }
+    .card h2 { font-size:20px; font-weight:600; margin-bottom:16px; }
+    .toolbar { display:flex; gap:12px; flex-wrap:wrap; align-items:center; margin-bottom:16px; }
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:10px 12px; text-align:left; border-bottom:1px solid #e2e8f0; }
+    th { background:#f8fafc; font-weight:600; }
+    .checkbox { width:20px; height:20px; cursor:pointer; }
+    .empty { text-align:center; padding:40px 20px; color:#718096; font-size:16px; }
+    .form-row { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:10px; }
+    .form-group { margin-bottom:12px; }
+    .form-group label { display:block; font-weight:500; margin-bottom:4px; font-size:14px; }
+    .form-control { width:100%; padding:10px 14px; border:2px solid #e2e8f0; border-radius:12px; font-size:14px; }
+    .form-control:focus { border-color:#2a6df4; outline:none; box-shadow:0 0 0 4px rgba(42,109,244,0.1); }
+    .file-upload-wrap { display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
+    .file-upload-wrap input[type="file"] { padding:6px; border:2px dashed #e2e8f0; border-radius:12px; }
+    .import-progress { margin-top:8px; display:none; }
+    .import-progress .progress-bar { width:100%; height:8px; background:#e2e8f0; border-radius:4px; overflow:hidden; }
+    .import-progress .progress-fill { height:100%; background:#2a6df4; width:0%; transition:width 0.3s; }
+    .import-progress .progress-text { font-size:14px; color:#4a5568; margin-top:4px; }
+
+    @media (max-width: 768px) {
+      body { padding:12px; }
+      .navbar { flex-direction:column; align-items:stretch; gap:10px; padding:16px; border-radius:24px; }
+      .navbar h1 { font-size:20px; text-align:center; }
+      .nav-actions { justify-content:center; }
+      .btn { font-size:13px; padding:6px 14px; }
+      .form-row { grid-template-columns:1fr; }
+    }
+  
+/* Vue 列表状态与导入状态 */
+.page-student .student-checkall{display:inline-flex;align-items:center;gap:7px;cursor:pointer}
+.page-student .student-selection-hint,.page-student .student-import-hint{color:var(--ui-muted,#718096);font-size:14px}
+.page-student .student-import-result{margin-top:10px;color:var(--ui-text,#213751);font-size:14px}
+.page-student .import-progress{display:block}

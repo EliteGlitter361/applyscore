@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN" data-page="detail">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.6.0"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.9.45"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>学分申请详情 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="modulepreload" href="/assets/controllers/detail.mjs?v=3.9.45">
+  <link rel="stylesheet" href="/assets/pages/detail.css?v=3.9.45"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.9.45">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.9.45"></script>
+  <script defer src="/sync.js?v=3.9.45"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=3.9.45"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  <script defer src="/assets/assigned-proof.js?v=3.9.45"></script>
+  <script defer src="/assets/app.js?v=3.9.56"></script>
+<meta name="application-version" content="3.9.45"></head>
+<body class="page-detail">
+
+
+  <div id="app"></div>
+  <template id="page-template">
+<div class="container">
+<div class="detail-card" id="detailContent" aria-live="polite">
+  <div v-if="detailLoading"><button type="button" class="btn detail-back-button" aria-label="返回上一页" title="返回上一页" @click="detailApi.goBack()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><div class="detail-loader" role="status">正在读取申请详情…</div></div>
+  <div v-else-if="detailError" class="error-container" role="alert"><div class="detail-title-row"><button type="button" class="btn detail-back-button" aria-label="返回上一页" title="返回上一页" @click="detailApi.goBack()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2>加载失败</h2></div><p>{{detailError}}</p><button type="button" class="btn btn-primary" @click="detailApi.reload()">重新加载</button><a href="/index.html" class="btn btn-outline">返回首页</a></div>
+  <template v-else-if="detailApp">
+    <header class="detail-header"><div class="detail-title-row"><button type="button" class="btn detail-back-button" aria-label="返回上一页" title="返回上一页" @click="detailApi.goBack()"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.25" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button><h2>{{detailCanEdit ? '修改申请' : (detailApp.versionName || '未命名活动')}}</h2></div><div class="sub">{{detailApp.name || '未知'}} · 学号：{{detailApp.packageName || ''}}</div></header>
+    <div class="detail-meta"><span v-if="detailApp.assigned" class="tag assigned-credit-tag">指定申请</span><span v-if="!detailCanEdit" class="tag time">提交时间：{{creditSubmissionTime(detailApp)}}</span><span class="tag" :class="detailApp.status==='needs_fix' ? 'needs-fix' : detailApp.status==='approved' ? 'approved':'pending'">{{detailApp.status==='needs_fix'?'需要修改':detailApp.status==='approved'?'已通过':'待审核'}}</span></div>
+    <section v-if="detailApp.assigned && !detailCanEdit" class="detail-section"><h3>活动地点</h3><div class="value">{{detailApp.location||'未填写'}}</div></section><section v-if="detailApp.assigned && !detailCanEdit && (detailApp.files||[]).some(f=>f.kind?.startsWith('attachment'))" class="detail-section"><h3>申请附件</h3><button type="button" class="btn btn-outline" v-for="file in (detailApp.files||[]).filter(f=>f.kind?.startsWith('attachment'))" :key="file.name" @click="detailApi.downloadAttachment(file)">{{file.originalName||file.name}}</button></section><section v-if="detailApp.rejectReason" class="detail-section reject-reason"><h3>驳回原因</h3><div class="value">{{detailApp.rejectReason}}</div></section>
+    <template v-if="!detailCanEdit">
+      <section v-if="detailApp.participants" class="detail-section"><h3>活动参与名单</h3><div class="value">{{detailApp.participants}}</div></section>
+      <section v-if="detailApp.screenshots?.length" class="detail-section"><h3>{{detailApp.assigned?'证明材料（图片）':'证明截图'}}</h3><div class="screenshots"><div v-for="(file,i) in detailApp.screenshots" :key="i" class="img-wrapper"><credit-assigned-proof v-if="detailApp.assigned" :task-id="file.taskId" :student-id="file.studentId" :file="file.file" :public-image="file.publicImage" @preview="detailApi.openImage($event)"></credit-assigned-proof><img v-else-if="!detailImageFailed['original-'+i]" :src="detailApi.imageUrl(file)" loading="lazy" alt="证明图片" @click="detailApi.openImage(detailApi.imageUrl(file))" @error="detailApi.imageFailed('original-'+i)"/><div v-else class="placeholder"><span>图片加载失败</span><button type="button" @click="detailApi.retryImage('original-'+i)">重试</button></div></div></div></section>
+    </template>
+    <form v-else class="edit-form" id="editForm" @submit.prevent="detailApi.submit()" :aria-busy="detailBusy">
+      <div class="form-group"><label for="editVersionName">活动名称 <span class="required">*</span></label><input id="editVersionName" type="text" class="form-control" v-model.trim="detailForm.versionName" required maxlength="200" placeholder="请输入活动名称" :disabled="detailBusy" /></div>
+      <div v-if="detailApp.assigned" class="form-group"><label for="editAssignedLocation">活动地点 *</label><input id="editAssignedLocation" class="form-control" v-model.trim="detailForm.location" required :disabled="detailBusy"></div><div v-if="detailApp.assigned" class="form-group"><label for="editAssignedAttachment">申请附件</label><div class="detail-attachment-list"><button type="button" class="btn btn-outline" v-for="file in (detailApp.files||[]).filter(f=>f.kind?.startsWith('attachment'))" :key="file.name" @click="detailApi.downloadAttachment(file)">{{file.originalName||file.name}}</button></div><input id="editAssignedAttachment" type="file" class="form-control" @change="detailAssignedAttachment=$event.target.files[0]||null" :disabled="detailBusy"><div class="form-hint">不上传则保留原附件</div></div>
+      <div class="form-group"><label for="editParticipants">活动参与名单</label><textarea id="editParticipants" class="form-control" rows="3" placeholder="例如：张三，李四，王五" v-model="detailForm.participants" :disabled="detailBusy"></textarea><div class="form-hint">如果是全班参加则填写“全班”</div></div>
+      <div class="form-group"><label for="editScreenshots">{{detailApp.assigned?'证明材料（图片）':'证明截图'}}</label>
+        <div v-if="detailApp.screenshots?.length" class="screenshots"><div class="img-wrapper" v-for="(file,i) in detailApp.screenshots" :key="i"><credit-assigned-proof v-if="detailApp.assigned" :task-id="file.taskId" :student-id="file.studentId" :file="file.file" :public-image="file.publicImage" @preview="detailApi.openImage($event)"></credit-assigned-proof><img v-else-if="!detailImageFailed['edit-'+i]" :src="detailApi.imageUrl(file)" alt="已有截图" @click="detailApi.openImage(detailApi.imageUrl(file))" @error="detailApi.imageFailed('edit-'+i)"/><div v-else class="placeholder"><span>图片加载失败</span><button type="button" @click="detailApi.retryImage('edit-'+i)">重试</button></div></div></div>
+        <span v-else class="form-hint">暂无截图</span>
+        <input type="file" id="editScreenshots" accept="image/*" multiple class="form-control detail-file-input" @change="detailApi.pickFiles($event)" :disabled="detailBusy"/>
+        <div class="edit-preview"><div class="preview-item" v-for="(item,i) in detailPreviews" :key="item.id"><img :src="item.url" alt="新上传截图" @click="detailApi.openImage(item.url)"/><button type="button" class="remove-btn" @click="detailApi.removePreview(i)" :disabled="detailBusy" aria-label="移除新截图">×</button></div></div>
+        <div class="form-hint">不上传新图则保留原截图；最多添加 2 张新截图</div>
+      </div>
+      <div class="action-bar"><button id="btnSubmitEdit" type="submit" class="btn btn-primary" :disabled="detailBusy">{{detailEditing?'正在提交…':'提交修改'}}</button><button id="btnCancelApp" type="button" class="btn btn-danger" :disabled="detailBusy" @click="detailApi.cancel()">取消申请</button></div>
+    </form>
+  </template>
+  <div v-if="detailPreviewSrc" class="image-modal" role="dialog" aria-label="截图预览" @click.self="detailApi.closeImage()"><img :src="detailPreviewSrc" alt="放大截图"/><button type="button" class="detail-image-close" @click="detailApi.closeImage()" aria-label="关闭图片预览">×</button></div>
+  <div v-if="detailCancelling" class="cancel-progress-backdrop" role="alertdialog" aria-modal="true" aria-labelledby="cancelProgressTitle" aria-describedby="cancelProgressHint" @keydown.esc.prevent.stop><div class="cancel-progress-card" tabindex="-1"><span class="cancel-progress-spinner" aria-hidden="true"></span><h2 id="cancelProgressTitle">正在取消申请...</h2><p id="cancelProgressHint">请勿关闭或返回页面，正在等待服务器确认取消结果。</p></div></div>
+</div>
+  </div>
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="zh-CN" data-page="upload">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.6.0"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <style>
+    html[data-application-entry] #app,html.history-checking #app{display:none!important}
+    #application-service-notice{display:none}
+    html[data-application-entry] #application-service-notice{position:fixed;inset:0;display:grid;place-items:center;padding:20px;color:#182c46}
+    #application-service-notice section{box-sizing:border-box;width:min(100%,480px);padding:clamp(24px,5vw,40px);border:1px solid #dce5f0;border-radius:22px;background:#fff;text-align:center}
+    #application-service-notice h1{margin:12px 0;font-size:24px}
+    #application-service-notice p{margin:0;white-space:pre-wrap}
+    #application-service-notice a:not([hidden]){display:inline-flex;margin-top:20px;padding:10px 18px;border-radius:11px;background:#286de0;color:#fff;font-weight:700;text-decoration:none}
+    #application-service-notice a:hover{background:#1754be}
+    #application-service-notice img{animation:paper-drift 1s ease-in-out infinite}
+    html[data-application-entry="closed"] #application-service-notice img{animation:none}
+    html[data-theme="dark"] #application-service-notice{color:#e9f2ff}
+    html[data-theme="dark"] #application-service-notice section{background:#1a283a;border-color:#38526f}
+    @keyframes paper-drift{0%,100%{transform:translateY(0) rotate(-8deg)}50%{transform:translateY(-9px) rotate(8deg)}}
+    @media(prefers-reduced-motion:reduce){#application-service-notice img{animation:none}}
+  </style>
+  <script>window.__inlineApplicationNotice = true;</script>
+  <script src="/assets/route-guard.js?v=3.9.63"></script>
+  <script>
+    if(window.__routePreflightPromise)document.documentElement.dataset.applicationEntry='checking';
+  </script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>提交学分申请 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="modulepreload" href="/assets/controllers/upload.mjs?v=3.9.65">
+  <link rel="stylesheet" href="/assets/pages/upload.css?v=3.9.64"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.9.45">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.9.45"></script>
+  <script defer src="/sync.js?v=3.9.45"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=3.9.45"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  
+  <script defer src="/assets/app.js?v=3.9.72"></script>
+<meta name="application-version" content="3.9.45"></head>
+<body class="page-upload">
+
+
+  <div id="application-service-notice">
+    <section role="status" aria-live="polite">
+      <img src="/assets/icons/提交申请.webp" alt="" width="64" height="64">
+      <h1 id="application-service-title">正在检查服务</h1>
+      <p id="application-service-message">正在确认学分申请是否开放…</p>
+      <a id="application-service-return" hidden class="btn btn-primary" href="/index.html">返回学分总览</a>
+    </section>
+  </div>
+  <script>
+    (() => {
+      const root = document.documentElement;
+      const showNotice = (title, message) => {
+        document.getElementById('application-service-title').textContent = title;
+        document.getElementById('application-service-message').textContent = message;
+        root.dataset.applicationEntry = 'closed';
+      };
+      if (window.__routePreflightPromise && window.parent !== window) window.parent.postMessage({type:'credit-view-rendered'}, location.origin);
+      window.__routePreflightPromise?.then(target => {
+        if (!target) delete root.dataset.applicationEntry;
+        else if (target.startsWith('/close.html?')) {
+          const params = new URL(target, location.href).searchParams;
+          const message = params.get('msg');
+          document.getElementById('application-service-return').hidden = params.get('hideReturn') === '1';
+          showNotice('学分申请服务已暂停', message || '请稍后再访问。');
+        }
+      }, () => showNotice('暂时无法检查服务', '请检查网络后刷新页面重试。'));
+    })();
+  </script>
+  <div id="app"></div>
+  <template id="page-template"><p v-if="entryCountdown" class="entry-close-countdown" role="timer">{{entryCountdown}}</p>
+  <div v-if="!applicationEntryBlocked || applicationEntryMessage" class="container application-layout">
+    <header class="page-header application-heading"><h1>填写申请信息</h1></header>
+    <div class="card application-card">
+    <div v-if="applicationEntryBlocked ? applicationEntryMessage : false" class="application-entry-status">
+      <p :role="applicationEntryMessage ? 'alert' : 'status'">{{applicationEntryMessage}}</p>
+      <button v-if="applicationEntryMessage" type="button" class="btn btn-outline" @click="retryApplicationEntry">重新检查</button>
+    </div>
+    <form v-show="!applicationEntryBlocked" id="applyForm" enctype="multipart/form-data" @submit.prevent="submitApplication">
+      <div class="form-row">
+        <div class="form-group"><label for="name">申请人姓名 <span class="required">*</span></label><input class="form-control" id="name" v-model="applicationName" required readonly /></div>
+        <div class="form-group"><label for="studentId">申请人学号 <span class="required">*</span></label><input class="form-control" id="studentId" v-model="applicationStudentId" required readonly /></div>
+      </div>
+      <div class="form-group"><label for="activity">活动名称 <span class="required">*</span></label><input class="form-control" id="activity" v-model.trim="applicationActivity" :disabled="applicationSubmitting" required /></div>
+      <div class="form-group">
+        <fieldset class="application-roster" :disabled="applicationSubmitting">
+          <legend>活动参与名单 <span aria-live="polite">· 已选择 {{applicationParticipantIds.length}} 人</span></legend>
+          <p v-if="applicationRosterLoading">正在加载学生名单…</p>
+          <p v-else-if="applicationRosterError">{{applicationRosterError}} <button type="button" class="btn btn-outline" @click="loadApplicationRoster()">重试</button></p>
+          <p v-else-if="!applicationRoster.length">暂无学生名单</p>
+          <template v-else>
+          <input class="form-control" type="search" v-model.trim="applicationRosterQuery" aria-label="搜索学生名单" placeholder="搜索姓名或学号">
+          <p v-if="!applicationVisibleRoster.length">没有匹配的学生</p>
+          <div v-else class="application-roster-list">
+            <label v-for="student in applicationVisibleRoster" :key="student.studentId">
+              <input type="checkbox" v-model="applicationParticipantIds" :value="student.studentId">
+              <span class="application-roster-person"><strong>{{student.name}}</strong><small>{{student.studentId}}</small></span>
+            </label>
+          </div>
+          </template>
+        </fieldset>
+      </div>
+      <div class="form-group"><label for="location">活动地点 <span class="required">*</span></label><input class="form-control" id="location" v-model.trim="applicationLocation" :disabled="applicationSubmitting" required /></div>
+      <div class="form-group">
+        <label for="imageUpload">上传活动证明（至少1张，最多2张）<span class="required">*</span></label>
+        <div class="upload-wrapper">
+          <div class="upload-control"><input type="file" id="imageUpload" accept="image/*" multiple :disabled="applicationSubmitting || applicationProcessingImages || applicationImages.length>=2" @change="selectApplicationImages($event)" /><span class="upload-badge" id="fileCount">{{applicationImages.length}} / 2</span></div>
+          <div class="upload-hint">支持 JPG / PNG / WebP，自动压缩至 700px 宽</div>
+          <div class="preview-container" id="preview"><div v-for="(img, idx) in applicationImages" :key="img.key" class="preview-item">
+            <button type="button" class="preview-image-button" @click="applicationPreviewSrc=img.url" :aria-label="'查看证明图片 '+(idx+1)"><img :src="img.url" :alt="'证明图片 '+(idx+1)" /></button>
+            <button type="button" class="remove-btn" :disabled="applicationSubmitting" @click="removeApplicationImage(idx)" :aria-label="'移除证明图片 '+(idx+1)">×</button>
+          </div><span v-if="applicationProcessingImages" class="image-processing" role="status">正在处理图片…</span></div>
+        </div>
+        
+      </div>
+      <button type="submit" class="btn btn-primary application-submit" :disabled="applicationSubmitting || applicationProcessingImages">{{applicationSubmitting ? '提交中…' : applicationProcessingImages ? '正在处理图片…' : '提交申请'}}</button>
+
+    </form>
+    </div>
+  </div>
+  <div v-if="applicationPreviewSrc" class="image-modal" role="dialog" aria-modal="true" aria-label="查看证明图片" @click.self="applicationPreviewSrc=''" @keydown.esc="applicationPreviewSrc=''" tabindex="-1"><img :src="applicationPreviewSrc" alt="图片放大预览" /><button type="button" class="image-modal-close" @click="applicationPreviewSrc=''" aria-label="关闭图片预览">×</button></div>
+  <div v-if="uploadModalOpen" class="application-progress-overlay" role="presentation" @click.stop>
+    <div class="application-progress-dialog" role="dialog" aria-modal="true" aria-labelledby="applicationProgressHeading" aria-describedby="applicationProgressBody" tabindex="-1" @keydown.esc.prevent>
+      <div class="application-progress-icon" :class="uploadModalState">
+        <span v-if="uploadModalState==='error'" class="application-error-icon">!</span>
+        <span v-else-if="uploadModalState==='success'" class="application-success-icon">✓</span>
+        <span v-else class="application-progress-spinner"></span>
+      </div>
+      <h2 id="applicationProgressHeading">{{uploadModalState==='uploading'?'正在上传申请材料…':uploadModalState==='saving'?'正在提交申请…':uploadModalState==='success'?'申请已提交':'提交未成功'}}</h2>
+      <p id="applicationProgressBody" class="application-progress-detail">{{uploadModalState==='uploading'?'正在上传活动证明，请勿关闭或返回页面。':uploadModalState==='saving'?'材料已上传，正在等待服务器保存确认。':uploadModalState==='success'?'提交成功，正在前往学分总览…':(uploadModalError || '请检查网络后重试。')}}</p>
+      <div v-if="uploadModalState==='uploading' || uploadModalState==='saving'" class="application-progress-track" role="progressbar" :aria-valuenow="uploadModalProgress" aria-valuemin="0" aria-valuemax="100" aria-label="文件上传进度">
+        <div class="application-progress-track-fill" :style="{width:uploadModalProgress+'%'}"></div>
+      </div>
+      <div v-if="uploadModalState==='uploading'" class="application-progress-number">文件上传 {{uploadModalProgress}}%</div>
+      <div v-else-if="uploadModalState==='saving'" class="application-progress-number">上传完成 · 等待服务器响应</div>
+      <div v-if="uploadModalState==='error'" class="application-progress-actions"><button type="button" class="btn btn-primary" @click="dismissUploadError()">关闭并返回表单</button></div>
+    </div>
+  </div>
+
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>

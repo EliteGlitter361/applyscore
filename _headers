@@ -1,0 +1,16 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: frame-ancestors 'self'; object-src 'none'; base-uri 'self'
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000
+
+/
+  Cache-Control: no-store, max-age=0
+/*.html
+  Cache-Control: no-store, max-age=0
+
+/vendor/*
+  Cache-Control: public, max-age=604800, immutable
+/assets/icons/*
+  Cache-Control: public, max-age=3600, must-revalidate

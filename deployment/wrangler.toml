@@ -1,0 +1,7 @@
+name = "credit-deadline-notifications"
+main = "notification-worker.js"
+compatibility_date = "2026-11-03"
+[triggers]
+crons = ["* * * * *"]
+[vars]
+SITE_URL = "https://applyscore.pages.dev"

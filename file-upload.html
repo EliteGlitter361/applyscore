@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN" data-page="file-upload">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.6.0"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=2.4"></script>
+  <script src="/assets/route-guard.js?v=3.9.45"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>文件上传 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="modulepreload" href="/assets/controllers/file-upload.mjs?v=3.9.52">
+  <link rel="stylesheet" href="/assets/pages/file-upload.css?v=3.9.45"/>
+  <link rel="stylesheet" href="/assets/core.css?v=3.9.45">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.9.45"></script>
+  <script defer src="/sync.js?v=3.9.45"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=3.9.45"></script><script defer src="/custom-dialog.js?v=2.9"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  
+  <script defer src="/assets/app.js?v=3.9.56"></script>
+<link rel="stylesheet" href="/assets/activity-cards.css?v=3.9.45"><meta name="application-version" content="3.9.45"></head>
+<body class="page-file-upload">
+
+
+  <div id="app"></div>
+  <template id="page-template">
+  <div id="toast" class="toast"></div>
+  <div class="container file-upload-workspace">
+<header class="upload-workspace-heading"><div class="upload-workspace-title"><span class="upload-workspace-icon"><img src="/assets/icons/文件上传.webp" alt=""></span><div><h1>文件上传</h1><p>选择老师发布的任务，按要求提交文件。</p></div></div><button v-if="!fileTaskId" type="button" class="btn btn-outline upload-task-refresh" :disabled="fileTaskRefreshing" @click="loadFileTasks(true)"><span :class="{'upload-refresh-spinning':fileTaskRefreshing}" aria-hidden="true">↻</span>{{fileTaskRefreshing?'刷新中…':'刷新任务'}}</button></header>
+    <div class="countdown-box" id="countdownBox" v-if="fileUploadCountdown" :class="{urgent:fileUploadCountdownUrgent}">
+      <div class="label">距离上传截止还剩</div>
+      <div class="time" id="countdownTime" role="timer">{{fileUploadCountdown}}</div>
+    </div>
+
+    <section v-if="!fileTaskId" class="upload-task-list"><div class="upload-section-heading"><h2>我的上传任务</h2><span v-if="!fileTasksLoading && !fileTaskError">{{fileTasks.length}} 项任务</span></div>
+      <div v-if="fileTasksLoading" class="upload-task-state" role="status"><span class="upload-state-art"><img src="/assets/icons/文件上传.webp" alt=""></span><h3>正在加载任务</h3><p>正在获取你的文件上传任务，请稍候。</p></div>
+      <div v-else-if="fileTaskError" class="upload-task-state" role="alert"><span class="upload-state-art"><img src="/assets/icons/文件上传.webp" alt=""></span><h3>暂时无法加载任务</h3><p>{{fileTaskError}}</p><button type="button" class="btn btn-primary" @click="loadFileTasks(true)">重新加载</button></div>
+      <div v-else-if="!fileTasks.length" class="upload-task-state"><span class="upload-state-art"><img src="/assets/icons/文件上传.webp" alt=""></span><h3>暂无上传任务</h3><p>目前没有发送给你的文件任务。<br>新任务发布后，会显示在这里并通过站内消息通知你。</p><a href="/messages.html" class="btn btn-outline">查看我的消息</a></div>
+      <div v-else class="app-grid"><div v-for="t in fileTasks" :key="t.id" class="upload-task-card-wrap"><a class="app-card" :href="t.deletedAt?undefined:'/file-upload.html?task='+encodeURIComponent(t.id)" :aria-disabled="!!t.deletedAt"><div class="app-title">{{t.title}}</div><div class="app-student">{{t.description || '选择任务上传文件'}}</div><div class="app-meta"><span class="tag time">{{t.deletedAt?'已被管理员删除':!t.fileUploadEnabled?'已结束':t.fileUploadDeadlineEnabled&&Date.now()>t.fileUploadDeadline?'已截止':t.submitted?'已提交':'进入上传'}}</span><span class="tag">{{t.fileUploadDeadlineEnabled?'截止 '+new Date(t.fileUploadDeadline).toLocaleString('zh-CN'):'不限时间'}}</span></div></a><button v-if="fileTaskEnded(t)" type="button" class="btn btn-outline task-dismiss-button" :disabled="fileActionBusy" @click="deleteFileTask(t)">删除已结束任务</button></div></div>
+    </section><section v-else class="upload-task-summary"><a href="/file-upload.html" class="upload-task-back">← 返回任务列表</a><h2>{{fileTasks.find(t=>t.id===fileTaskId)?.title||'正在加载任务…'}}</h2><p>{{fileTasks.find(t=>t.id===fileTaskId)?.description}}</p><p v-if="fileTaskError" role="alert">{{fileTaskError}}</p></section>
+    <p v-if="fileTasks.some(t=>t.id===fileTaskId&&t.submitted)" role="status">此任务已提交。</p>
+    <form v-show="fileTasks.some(t=>t.id===fileTaskId&&!t.submitted)" id="uploadForm" enctype="multipart/form-data">
+      <div class="form-row">
+        <div class="form-group">
+          <label>姓名 <span class="required">*</span></label>
+          <input class="form-control" id="name" v-model="fileUploadPersonName" required />
+        </div>
+        <div class="form-group">
+          <label>学号 <span class="required">*</span></label>
+          <input class="form-control" id="studentId" v-model="fileUploadPersonId" required />
+        </div>
+      </div>
+      <div class="form-group">
+        <label>选择文件 <span class="required">*</span></label>
+        <div class="upload-wrapper">
+          <div class="upload-control">
+            <input type="file" id="fileInput" :multiple="fileUploadAllowedMultiple" :disabled="fileUploadBusy" />
+            <span class="upload-badge" id="fileCount">{{fileUploadSelections.length}} 个文件</span>
+          </div>
+          <div class="upload-hint" id="uploadHint">{{fileUploadHint}}</div>
+          <div class="file-list" id="fileList"><div v-for="(file,idx) in fileUploadSelections" :key="file.key" class="file-item"><span class="file-info">{{file.name}}（{{file.sizeKB}} KB）</span><button type="button" class="remove-file" :aria-label="'移除 '+file.name" @click="invokePageAction('removeSelectedFile',idx)">×</button></div></div>
+        </div>
+      </div>
+      <button type="submit" class="btn-submit" :disabled="fileUploadBusy || fileUploadExpired">{{fileUploadExpired?'上传已截止':fileUploadBusy?'正在上传…':'上传文件'}}</button>
+    </form>
+  </div>
+
+  <div class="upload-modal-overlay" id="uploadModalOverlay" v-if="fileUploadModalOpen">
+    <div class="upload-modal-card">
+      <h3>
+        <span class="upload-modal-icon">
+          <svg viewBox="0 0 24 24" width="22" height="22" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+            <polyline points="17 8 12 3 7 8"/>
+            <line x1="12" y1="3" x2="12" y2="15"/>
+          </svg>
+        </span>
+        正在上传...
+      </h3>
+      <div class="upload-files-list" id="uploadFilesList">
+        <div v-for="(file,index) in fileUploadModalFiles" :key="index" class="file-row"><span class="fname">{{file.name}}</span><span class="fsize">{{file.sizeKB}} KB</span></div>
+      </div>
+      <div class="upload-progress-bar">
+        <div class="upload-progress-fill" id="uploadProgressFill" :style="{width:fileUploadModalProgress+'%'}"></div>
+      </div>
+      <div class="upload-progress-text" id="uploadProgressText" role="status">{{fileUploadModalWaiting?'服务器处理中…':fileUploadModalProgress+'%'}}</div>
+      <button type="button" class="upload-cancel-btn" id="uploadCancelBtn" :disabled="fileUploadModalWaiting" @click="invokePageAction('cancelUpload')">
+        <svg viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"><line x1="6" y1="6" x2="18" y2="18"/><line x1="6" y1="18" x2="18" y2="6"/></svg>
+        取消上传
+      </button>
+    </div>
+  </div>
+
+  
+</template>
+  <noscript>请开启 JavaScript 以使用学分申请系统。</noscript>
+</body>
+</html>
