@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="zh-CN" data-page="admin-tools">
+<head>
+  <meta charset="utf-8"/>
+  <script src="/assets/theme.js?v=3.6.0"></script>
+  <style id="credit-critical-paint">html{background:#f4f7fc;color-scheme:light}html[data-theme="dark"]{background:#101927;color-scheme:dark}html[data-theme="dark"] body,html[data-theme="dark"] #app{background:#101927!important;color:#e9f2ff!important}html[data-theme="dark"] #music-root{background:#101927!important;color:#e9f2ff!important}html[data-theme="light"] body{background:#f4f7fc}</style>
+  <script src="/assets/music-bootstrap.js?v=3.9.109"></script>
+  <script src="/assets/route-guard.js?v=3.9.112"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#f5f8fc"/>
+  <meta name="description" content="学分申请系统：学分申报、进度查询、文件上传与审核管理"/>
+  <title>管理工具 | 学分申请系统</title>
+  <link rel="icon" href="/assets/icons/网页选项卡标题，网站logo.webp" type="image/webp">
+  <link rel="modulepreload" href="/assets/controllers/admin-tools.mjs?v=3.9.99">
+  <link rel="stylesheet" href="/assets/pages/admin-tools.css?v=3.9.45"/>
+  <link rel="stylesheet" href="/assets/pages/assigned-compose.css?v=3.9.45">
+  <link rel="stylesheet" href="/assets/core.css?v=3.9.113">
+  <script defer src="/vendor/vue.global.js"></script>
+  <script defer src="/api-cache.js?v=3.9.45"></script>
+  <script defer src="/sync.js?v=3.9.45"></script>
+  <script defer src="/feedback.js?v=2.9"></script>
+  <script defer src="/assets/vue-feedback.js?v=3.9.45"></script><script defer src="/custom-dialog.js?v=3.9.99"></script>
+  <script defer src="/assets/refresh-feedback.js?v=2.2"></script>
+  
+  <script defer src="/assets/app.js?v=3.9.125"></script>
+<link rel="stylesheet" href="/assets/activity-cards.css?v=3.9.45"><meta name="application-version" content="3.9.45"><link rel="stylesheet" href="/assets/security-center.css?v=3.9.85"><link rel="stylesheet" href="/assets/audit-window.css?v=3.9.124"></head>
+<body class="page-admin-tools">
+
+
+  <div id="app"></div>
+  <template id="page-template"><div class="container"><header class="page-header tools-heading"><div class="tools-title"><img src="/assets/icons/command-block.gif" alt=""><div><h1>管理工具</h1><p>选择工具，集中处理日常事务。</p></div></div><button type="button" class="btn btn-outline" :disabled="tool.refreshing||tool.busy" @click="toolApi.refresh()"><span :class="{'tools-spinning':tool.refreshing}">↻</span> {{tool.refreshing?'正在刷新…':'刷新工具'}}</button></header><p v-if="tool.error" class="dashboard-alert" role="alert">{{tool.error}}</p><p v-if="tool.loading" role="status">正在加载管理工具…</p><div v-else><div v-if="tool.panel" class="tabs-wrap tools-tabs"><div class="tabs"><button type="button" class="tab-btn" v-if="tool.permissions.assignedPermission" :class="{active:tool.panel==='compose'}" @click="tool.panel='compose'"><img src="/assets/icons/提交申请.webp" alt="">指定申请</button><button type="button" class="tab-btn" v-if="tool.permissions.messagePermission" :class="{active:tool.panel==='messages'}" @click="tool.panel='messages'"><img src="/assets/icons/我的消息.png" alt="">消息发送</button><button type="button" class="tab-btn" v-if="tool.permissions.filePermission" :class="{active:tool.panel==='files'}" @click="tool.panel='files';toolApi.loadFiles()"><img src="/assets/icons/文件上传.webp" alt="">文件管理</button><button type="button" class="tab-btn" v-if="tool.permissions.canBan" :class="{active:tool.panel==='bans'}" @click="tool.panel='bans';toolApi.loadBans(true)"><img src="/assets/icons/学生登录.webp" alt="">学生封禁</button></div></div><section v-if="tool.panel==='bans' && tool.permissions.canBan" class="card request-compose"><h2>学生封禁</h2><input class="form-control" v-model.trim="tool.search" placeholder="搜索姓名或学号"><div v-if="toolBanFiltered.length" class="tools-table-scroll" tabindex="0" role="region" aria-label="学生封禁列表">
+<table class="tools-data-table tools-ban-table" aria-label="学生封禁列表">
+  <thead><tr><th scope="col">姓名</th><th scope="col">学号</th><th scope="col">状态</th><th scope="col">解封倒计时</th><th scope="col">封禁原因</th><th scope="col">操作</th></tr></thead>
+  <tbody><tr v-for="s in toolBanFiltered" :key="s.studentId">
+    <th scope="row">{{s.name}}</th><td>{{s.studentId}}</td>
+    <td><span class="badge" :class="studentIsBanned(s)?'badge-danger':'badge-success'">{{studentIsBanned(s)?'已封禁':'正常'}}</span></td>
+    <td :class="{'account-ban-countdown':studentIsBanned(s)}">{{studentIsBanned(s)?accountBanCountdown(s):'—'}}</td>
+    <td class="tools-ban-reason">{{studentIsBanned(s)?(s.banReason||'未记录原因'):'—'}}</td>
+    <td><button type="button" class="btn" :class="studentIsBanned(s)?'btn-success':'btn-danger'" :disabled="tool.busy || (studentIsBanned(s) && !s.canUnban)" @click="toolApi.toggleBan(s)">{{studentIsBanned(s)?'解封':'封禁'}}</button></td>
+  </tr></tbody>
+</table></div><p v-if="!toolBanFiltered.length" class="empty-state">暂无匹配学生</p></section><section v-if="tool.panel==='compose' && tool.permissions.assignedPermission" class="request-workspace"><form class="card request-compose" @submit.prevent="createAssignedRequest"><header class="request-compose-heading"><div><div class="request-eyebrow">指定申请 · 创建任务</div><h2>发送学分申请</h2><p>填写活动信息，选择接收学生，设置材料要求与提交时间。</p></div></header><div class="request-compose-grid"><section class="request-compose-main"><div class="request-step"><span>01</span><h3>活动信息</h3></div><div class="form-group"><label for="request-title">活动名称 *</label><input id="request-title" class="form-control" v-model.trim="requestTitle" required maxlength="120" placeholder="例如：志愿服务实践活动"></div><div class="form-group"><label for="request-description">申请说明</label><textarea id="request-description" class="form-control" v-model.trim="requestDescription" rows="4" placeholder="请说明活动内容、填写要求及证明材料要求"></textarea></div><div class="request-step"><span>02</span><h3>选择接收学生</h3><span class="request-selected-count">已选 {{requestSelectedCount}} 人</span></div><div class="request-picker-toolbar"><input class="form-control" type="search" v-model.trim="requestStudentSearch" placeholder="搜索姓名或学号" aria-label="搜索接收学生"><button type="button" class="btn btn-outline" @click="requestSelectAll">全选 / 取消全部</button></div><div class="request-student-list"><label v-for="s in requestStudentsFiltered" :key="String(s.studentId)" class="request-student-option"><input type="checkbox" :checked="!!requestStudentSelected[String(s.studentId)]" @change="requestToggleStudent(s.studentId,$event.target.checked)"><span>{{s.name}}<small>{{s.studentId}}</small></span></label><p v-if="!requestStudentsFiltered.length" class="empty-state">暂无匹配学生</p></div></section><aside class="request-compose-side"><div class="request-step"><span>03</span><h3>提交规则</h3></div><label class="request-switch"><span><strong>必须上传附件</strong><small>活动证明图片始终为必填</small></span><input type="checkbox" role="switch" v-model="requestAttachmentRequired"></label><fieldset class="request-expiry"><legend>申请有效期</legend><label><input type="radio" value="none" v-model="requestExpiryMode">不限制</label><label><input type="radio" value="date" v-model="requestExpiryMode">指定截止时间</label><label><input type="radio" value="duration" v-model="requestExpiryMode">按有效天数</label></fieldset><div v-if="requestExpiryMode==='date'" class="form-group"><label for="request-expiry">截止时间</label><input id="request-expiry" type="datetime-local" class="form-control" v-model="requestExpiresAt" required></div><div v-if="requestExpiryMode==='duration'" class="form-group"><label for="request-duration">有效天数</label><input id="request-duration" type="number" min="1" max="3650" class="form-control" v-model.number="requestDurationDays" required></div><div class="request-preview"><strong>{{requestTitle||'尚未填写活动名称'}}</strong><p>发送给 {{requestSelectedCount}} 位学生</p><p>{{requestAttachmentRequired?'附件必填':'附件选填'}} · {{requestExpiryMode==='none'?'长期有效':requestExpiryMode==='date'?(requestExpiresAt||'请选择截止时间'):requestDurationDays+' 天内有效'}}</p></div></aside></div><footer class="request-compose-footer"><p v-if="requestNotice" role="status">{{requestNotice}}</p><span v-else>发送后，学生可在“管理员发放的申请”中填写提交。</span><button type="submit" class="btn btn-primary" :class="{'request-submit-busy':requestBusy}" :disabled="requestBusy">{{requestBusy?'正在发送…':'发送给 '+requestSelectedCount+' 位学生'}}</button></footer></form></section><form v-if="tool.panel==='messages' && tool.permissions.messagePermission" class="card request-compose tools-message-form" @submit.prevent="toolApi.sendMessages()"><header class="message-compose-heading"><h2>向学生发送消息</h2><button type="button" class="btn btn-outline" @click="openMessageHistory">查看历史消息</button></header><div class="form-group"><label>消息标题</label><input class="form-control" v-model.trim="tool.messageTitle" required maxlength="120"></div><div class="form-group"><label>消息内容</label><textarea class="form-control" v-model.trim="tool.messageContent" required rows="5"></textarea></div><section class="tools-message-recipients" aria-label="接收学生"><h3>选择接收学生</h3>
+<div class="tools-file-toolbar"><input class="form-control" type="search" v-model.trim="requestStudentSearch" aria-label="搜索接收学生" placeholder="搜索姓名或学号"><button type="button" class="btn btn-outline" @click="requestSelectAll">全选 / 取消全部</button></div>
+<div class="request-student-list"><label v-for="s in requestStudentsFiltered" :key="s.studentId" class="request-student-option"><input type="checkbox" v-model="requestStudentSelected[s.studentId]"><span>{{s.name}}<small>{{s.studentId}}</small></span></label><p v-if="!requestStudentsFiltered.length" class="empty-state">暂无匹配学生</p></div></section>
+<footer class="request-compose-footer"><span>已选 {{requestSelectedCount}} 位学生</span><button type="submit" class="btn btn-primary" :disabled="tool.busy || !requestSelectedCount">{{tool.busy?'正在发送…':'发送消息'}}</button></footer><p role="status">{{tool.notice}}</p></form><section v-if="tool.panel==='files' && tool.permissions.filePermission" class="card request-compose"><h2>学生上传文件</h2><div class="tools-file-toolbar"><input class="form-control" type="search" aria-label="搜索上传文件" v-model.trim="tool.search" placeholder="搜索姓名、学号或文件"><button class="btn btn-outline" :disabled="tool.busy" @click="toolApi.refreshFiles()">{{tool.busy?'正在刷新…':'刷新'}}</button></div><p v-if="fileTasksLoading" class="empty-state">正在加载文件任务…</p><p v-else-if="fileTaskError" role="alert">{{fileTaskError}} <button class="btn btn-outline" @click="loadFileTasks">重新加载</button></p><p v-else-if="!fileTasks.length" class="empty-state">没有发布的文件任务</p><div v-else class="app-grid"><button v-for="t in fileTasks.filter(task=>!tool.search || toolFilesFiltered.some(row=>row.taskId===task.id) || (task.title||'').includes(tool.search))" :key="t.id" class="app-card" @click="toolApi.openFileTask(t.id)"><div class="app-title">{{t.title}}</div><div class="app-student">{{t.description || '点击查看任务文件'}}</div><div class="app-meta"><span class="tag time">{{t.createdAt?adminFormatTime(t.createdAt):'文件上传任务'}}</span></div></button></div><button v-if="tool.files.some(r=>!r.taskId)" class="btn btn-outline" @click="toolApi.openFileTask('legacy')">查看历史上传文件</button><dialog ref="toolsFileDialog" class="tools-file-dialog audit-modal-card file-task-modal" aria-labelledby="tools-file-dialog-title" @close="fileTaskDetailClose" @click.self="$refs.toolsFileDialog.close()">
+<header class="audit-modal-header"><h2 id="tools-file-dialog-title">{{fileTasks.find(task=>task.id===fileManageTask)?.title || '历史上传'}}</h2><button type="button" class="audit-modal-close" aria-label="关闭任务窗口" @click="$refs.toolsFileDialog.close()">×</button></header>
+<div class="tools-table-scroll" tabindex="0" role="region" aria-label="任务上传记录">
+<table class="tools-data-table tools-upload-table" aria-label="任务上传记录">
+  <thead><tr><th scope="col">姓名</th><th scope="col">学号</th><th scope="col">上传时间</th><th scope="col">附件</th></tr></thead>
+  <tbody>
+    <tr v-for="row in toolFilesFiltered.filter(r=>(r.taskId||'legacy')===fileManageTask)" :key="row.id">
+      <th scope="row">{{row.name}}</th><td>{{row.studentId}}</td><td>{{adminFormatTime(row.uploadedAt)}}</td>
+      <td><div v-if="row.files?.length" class="tools-upload-attachments">
+        <button type="button" class="btn btn-outline" v-for="file in row.files" :key="file" :disabled="!!tool.downloadKey" @click="toolApi.download(row,file)">{{tool.downloadKey===JSON.stringify([row.id,file])?'正在下载…':'下载 '+file}}</button>
+      </div><span v-else>—</span></td>
+    </tr>
+    <tr v-if="!toolFilesFiltered.some(row=>(row.taskId||'legacy')===fileManageTask)"><td colspan="4">暂无匹配文件</td></tr>
+  </tbody>
+</table></div></dialog></section><div v-if="!tool.panel" class="tools-empty"><img src="/assets/icons/command-block.gif" alt=""><h2>暂无可用工具</h2><p>可点击“刷新工具”重新读取可用功能。</p></div></div></div>
+<dialog ref="messageHistoryDialog" class="audit-modal-card tools-file-dialog message-history-dialog" aria-labelledby="message-history-title">
+  <header class="audit-modal-header">
+    <h2 id="message-history-title">管理员发送历史</h2>
+    <button type="button" class="audit-modal-close" aria-label="关闭" @click="$refs.messageHistoryDialog.close()">×</button>
+  </header>
+  <div class="message-history-toolbar">
+    <label class="message-history-filter">
+      <span>发送管理员</span>
+      <select class="form-control" v-model="messageHistoryFilter" :disabled="messageHistoryLoading">
+        <option value="">全部</option>
+        <option v-for="sender in messageHistorySenders" :key="sender" :value="sender">{{sender || '发送人未知（旧记录）'}}</option>
+      </select>
+    </label>
+    <button type="button" class="btn btn-outline" :disabled="messageHistoryLoading" @click="loadMessageHistory">{{messageHistoryLoading?'正在刷新…':'刷新'}}</button>
+  </div>
+  <p v-if="messageHistoryLoading" class="empty-state" role="status">正在加载历史消息…</p>
+  <div v-else-if="messageHistoryError" class="empty-state" role="alert">
+    <p>{{messageHistoryError}}</p>
+    <button type="button" class="btn btn-outline" @click="loadMessageHistory">重新加载</button>
+  </div>
+  <p v-else-if="!messageHistoryFiltered.length" class="empty-state">{{messageHistoryFilter === '' ? '暂无管理员发送记录。审核结果、指定申请和文件任务等自动通知在学生站内消息中查看。' : '该发送人暂无匹配记录'}}</p>
+  <div v-else class="message-history-list">
+    <article v-for="row in messageHistoryFiltered" :key="row.id" class="message-history-entry">
+      <h3>{{row.title}}</h3>
+      <p class="message-history-meta"><span>{{row.sentBy || '发送人未知（旧记录）'}}</span><span>{{formatMessageHistoryTime(row.createdAt)}}</span><span>{{row.recipientCount}} 位接收学生</span></p>
+      <p class="message-history-content">{{row.content}}</p>
+      <details class="message-history-recipients">
+        <summary>已读 {{row.readCount}} 人 · 未读 {{row.unreadCount}} 人<span v-if="row.recipientCount > row.readCount + row.unreadCount"> · 状态未知 {{row.recipientCount - row.readCount - row.unreadCount}} 人</span></summary>
+        <ul>
+          <li v-for="(recipient, index) in row.recipients" :key="index">
+            <span>{{recipient.name ? recipient.name + ' · ' : ''}}{{recipient.studentId}}</span>
+            <strong>{{recipient.read === null ? '状态未知' : recipient.read ? '已读' : '未读'}}</strong>
+          </li>
+        </ul>
+      </details>
+    </article>
+  </div>
+</dialog>
+</template><noscript>请开启JavaScript。</noscript></body></html>

@@ -1,0 +1,41 @@
+/* Shared form surfaces replace legacy hardcoded light backgrounds. */
+.page-view select,.page-view select option{background:var(--ui-card)!important;color:var(--ui-text)!important;color-scheme:light}.page-view select{border-color:var(--ui-stroke)!important}html[data-theme="dark"] .page-view select,html[data-theme="dark"] .page-view select option{color-scheme:dark}
+.page-view :is(.request-student-list,.file-task-recipient-list){background:var(--ui-card)!important;border:1px solid var(--ui-stroke)!important;border-radius:14px;padding:12px!important;color:var(--ui-text)!important}.page-view :is(.request-student-option,.file-task-recipient-list label){box-sizing:border-box;min-height:48px;border:1px solid transparent;border-radius:10px;padding:10px!important;gap:10px;cursor:pointer;color:var(--ui-text)!important}.page-view :is(.request-student-option,.file-task-recipient-list label):hover{background:var(--ui-soft)!important}.page-view :is(.request-student-option,.file-task-recipient-list label):has(input:checked){background:var(--ui-soft)!important;border-color:var(--ui-primary)!important}.page-view :is(.request-student-option,.file-task-recipient-list label):focus-within{outline:2px solid var(--ui-primary);outline-offset:1px}.page-view :is(.request-student-option,.file-task-recipient-list label) input{accent-color:var(--ui-primary);width:18px!important;height:18px!important;flex:none}.page-view .request-student-option small{color:var(--ui-muted)!important}
+
+.account-security-panel{margin-bottom:26px;padding-bottom:24px;border-bottom:1px solid var(--ui-stroke)}
+.account-security-heading{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.account-security-heading p,.account-security-panel small{color:var(--ui-muted)}
+.account-device{max-width:280px;overflow-wrap:anywhere;font-size:12px}
+.account-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.account-login-policy{display:flex;flex-wrap:wrap;gap:14px;margin:16px 0}
+.account-login-policy label{display:grid;gap:6px;color:var(--ui-text)}
+.account-login-policy select{min-height:44px;padding:8px 12px;border:1px solid var(--ui-stroke);border-radius:10px;max-width:100%}
+
+.account-risk-cell{min-width:155px;max-width:220px}
+.account-risk-cell small{display:block;margin-top:5px;line-height:1.5}
+.account-risk-badge{display:inline-block;min-width:2em;padding:3px 8px;border-radius:9px;text-align:center;font-weight:700}
+.account-risk-badge.risk-low{color:#13694d;background:#daf4e8}
+.account-risk-badge.risk-medium{color:#825407;background:#fff0ce}
+.account-risk-badge.risk-high{color:#a12d3a;background:#ffe2e5}
+html[data-theme="dark"] .account-risk-badge.risk-low{color:#b5f1d6;background:#164c3b}
+html[data-theme="dark"] .account-risk-badge.risk-medium{color:#ffe3a6;background:#563e1b}
+html[data-theme="dark"] .account-risk-badge.risk-high{color:#ffd1d9;background:#642d3c}
+
+.account-security-panel .table-wrap{margin-inline:auto}
+.page-admin .page-view .account-security-panel th,.page-admin .page-view .account-security-panel td{text-align:center!important;vertical-align:middle!important}
+.account-security-panel .account-actions{justify-content:center}
+.account-login-policy fieldset{border:0;padding:0;margin:0;min-width:0}
+.account-login-policy legend{font-weight:700;margin-bottom:8px;color:var(--ui-text)}
+.account-policy-segments{display:flex;gap:4px;padding:4px;border:1px solid var(--ui-stroke);border-radius:13px;background:var(--ui-soft)}
+.page-view .account-policy-segments button{min-height:40px;padding:8px 14px!important;border:1px solid transparent!important;background:transparent!important;color:var(--ui-text)!important}
+html[data-theme] .page-admin .page-view .account-policy-segments button[aria-pressed="true"]{background:var(--ui-highlight)!important;color:var(--ui-highlight-text)!important;border-color:var(--ui-primary)!important}
+
+.account-device-history{list-style:none;padding:0}
+.account-device-history li{display:flex;align-items:center;flex-wrap:wrap;gap:12px;padding:12px 0;border-bottom:1px solid var(--ui-stroke)}
+.account-device-history li span{color:var(--ui-muted)}
+.account-security-panel .account-risk-fields{border:0;margin:0;padding:0;min-width:0}
+.account-ban-countdown{color:#c43044;font-weight:700}html[data-theme="dark"] .account-ban-countdown{color:#ff9aa8}
+
+.account-ban-reason{display:block;width:fit-content;max-width:100%;margin:5px auto 0;padding:3px 8px;border-radius:6px;background:#fde8eb;color:#902638;overflow-wrap:anywhere}
+html[data-theme="dark"] .account-ban-reason{background:#512d37;color:#ffc1ca}

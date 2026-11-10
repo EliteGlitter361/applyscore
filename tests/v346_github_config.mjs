@@ -1,0 +1,18 @@
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+const root=path.resolve(import.meta.dirname,'..');
+let calls=0;
+globalThis.__accountTest={getAccountJson:async(env,file)=>{calls++;assert.equal(file,'data/adminuser.json');if(env.failure)throw new Error('Gitee read failed');return {content:env.hasSystem?[{role:'system'}]:[{role:'admin'}]};}};
+const source=fs.readFileSync(path.join(root,'functions/api/admin/check-system.js'),'utf8').replace("import { getAccountJson } from '../../utils/accounts.js';",'const {getAccountJson}=globalThis.__accountTest;');
+assert.doesNotMatch(source,/^import /m);
+const {onRequest}=await import('data:text/javascript;base64,'+Buffer.from(source).toString('base64'));
+const request=new Request('https://example.org/api/admin/check-system');
+let response=await onRequest({request,env:{}}),data=await response.json();
+assert.equal(response.status,503);assert.equal(data.code,'GITEE_CONFIG_MISSING');assert.deepEqual(data.missing,['GITEE_TOKEN','GITEE_OWNER','GITEE_REPO']);assert.equal(calls,0);
+const env={GITEE_TOKEN:'dummy',GITEE_OWNER:'owner',GITEE_REPO:'credit',hasSystem:true};
+response=await onRequest({request,env});data=await response.json();assert.equal(response.status,200);assert.deepEqual(data,{exists:true});
+response=await onRequest({request,env:{...env,hasSystem:false}});data=await response.json();assert.equal(response.status,200);assert.deepEqual(data,{exists:false});
+response=await onRequest({request,env:{...env,failure:true}});data=await response.json();assert.equal(response.status,500);assert.match(data.error,/Gitee read failed/);
+assert.match(fs.readFileSync(path.join(root,'assets/app.js'),'utf8'),/GITEE_CONFIG_MISSING/);
+console.log('PASS administrator initialization status reads Gitee and reports missing Gitee bindings');

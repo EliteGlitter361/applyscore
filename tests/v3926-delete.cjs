@@ -1,0 +1,27 @@
+const fs=require('fs'),vm=require('vm'),assert=require('assert'),path=require('path'),root=path.resolve(__dirname,'..');const src=f=>fs.readFileSync(path.join(root,f),'utf8').replace(/^import[^\r\n]*\r?\n/gm,'').replace(/export /g,'');
+(async()=>{
+ const store={'data/file-tasks.json':[{id:'active',title:'Active',fileUploadEnabled:true},{id:'ended',title:'Ended',fileUploadEnabled:true,fileUploadDeadlineEnabled:true,fileUploadDeadline:1},{id:'private',audience:'selected',studentIds:['2'],fileUploadEnabled:false}], 'data/students.json':[{studentId:'1'},{studentId:'2'}], 'data/messages.json':[{id:'a',studentId:'1',read:false},{id:'b',studentId:'1',read:false},{id:'c',studentId:'2',read:false}]};
+ const ctx={Response,Request,URL,Date,console,getFileFromGitee:async(e,p)=>({content:structuredClone(store[p]||[]),sha:'s'}),writeJsonToGitee:async(e,p,rows)=>store[p]=structuredClone(rows),getAccountJson:async()=>({content:[]}),syncFileTaskNotifications:async()=>{},syncRequestNotifications:async()=>{}};vm.createContext(ctx);vm.runInContext(src('functions/utils/file-task-access.js'),ctx);vm.runInContext(src('functions/api/file-tasks.js')+';this.tasks=onRequest',ctx);vm.runInContext(src('functions/api/messages.js')+';this.messages=onRequest',ctx);
+ const req=(handler,method,token,b,url)=>ctx[handler]({request:new Request('https://test/api/'+(url||handler),{method,headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},...(b?{body:JSON.stringify(b)}:{})}),env:{}});
+ assert.equal((await req('tasks','DELETE','student-jwt-1',{id:'active'})).status,409);
+ assert.equal((await req('tasks','DELETE','student-jwt-1',{id:'private'})).status,403);
+ assert.equal((await req('tasks','DELETE','student-jwt-1',{id:'ended'})).status,200);
+ let rows=await (await req('tasks','GET','student-jwt-1')).json();assert(!rows.some(t=>t.id==='ended'));assert(!rows.some(t=>'dismissedStudentIds'in t));
+ rows=await (await req('tasks','GET','student-jwt-2')).json();assert(rows.some(t=>t.id==='ended'));
+ assert.equal((await req('tasks','DELETE','fake-jwt-system',{id:'active'})).status,200);
+ rows=await (await req('tasks','GET','fake-jwt-system')).json();assert(!rows.some(t=>t.id==='active'));
+ rows=await (await req('tasks','GET','student-jwt-1')).json();assert(rows.some(t=>t.id==='active'&&t.deletedAt&&t.fileUploadEnabled===false));
+ assert.equal((await req('tasks','DELETE','student-jwt-1',{id:'active'})).status,200);
+ assert.equal((await req('messages','DELETE','',{all:true})).status,401);
+ assert.equal((await req('messages','DELETE','student-jwt-1',{ids:['a','c']})).status,200);
+ assert(store['data/messages.json'].find(m=>m.id==='a').deleted);assert(!store['data/messages.json'].find(m=>m.id==='c').deleted);
+ rows=await (await req('messages','GET','student-jwt-1',null,'messages?studentId=1')).json();assert.deepEqual(rows.map(m=>m.id),['b']);
+ assert.equal((await req('messages','DELETE','student-jwt-1',{all:true})).status,200);
+ rows=await (await req('messages','GET','student-jwt-1',null,'messages?studentId=1')).json();assert.equal(rows.length,0);assert.equal(store['data/messages.json'].length,3);assert(!store['data/messages.json'].find(m=>m.id==='c').deleted);
+ store['data/file-tasks.json'].push({id:'batch1',fileUploadEnabled:true},{id:'batch2',fileUploadEnabled:true});
+ assert.equal((await req('tasks','DELETE','student-jwt-1',{ids:['batch1']})).status,403);
+ assert.equal((await req('tasks','DELETE','fake-jwt-system',{ids:[]})).status,400);
+ assert.equal((await req('tasks','DELETE','fake-jwt-system',{ids:['batch1','missing']})).status,404);assert(!store['data/file-tasks.json'].find(t=>t.id==='batch1').deletedAt);
+ const batch=await req('tasks','DELETE','fake-jwt-system',{ids:['batch1','batch2','batch1']});assert.equal(batch.status,200);assert.equal((await batch.json()).count,2);assert(store['data/file-tasks.json'].filter(t=>t.id.startsWith('batch')).every(t=>t.deletedAt&&t.fileUploadEnabled===false));
+ console.log('PASS admin tombstone, student ended-only dismissal, per-student visibility, own-message selection/clear, retained notification dedup records');
+})().catch(e=>{console.error(e);process.exitCode=1});

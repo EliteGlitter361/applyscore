@@ -1,0 +1,1 @@
+export default {async scheduled(event,env,ctx){ctx.waitUntil((async()=>{const r=await fetch(env.SITE_URL+'/api/scheduled-notifications',{method:'POST',headers:{Authorization:'Bearer '+env.SCHEDULE_SECRET}});if(!r.ok)throw Error('Notification sync failed: '+r.status);})());}};
